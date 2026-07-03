@@ -1,0 +1,13 @@
+{
+  "name": "claude-code-pet",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Claude Code 桌宠 — 悬浮在桌面上的小 Claude",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
