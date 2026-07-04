@@ -163,117 +163,140 @@
   </div>
 </div>
 <script>
-  // ============ 动漫角色：紫刘海(啾啾藏帽里) + 大眼(黑珠·珠内仪表盘刻度) + 纯白狗连体衣+口水巾 ============
+  // ============ 动漫角色 v2（DNA 规范）：7.2 头身 · 倒梯形脸 · 年轮水波纹眼 · 深雾棕长发
+  //   炭灰 oversize 卫衣+白内搭 · 工装百褶裙 · 不对称袜 · 厚底鞋 · 立方体饰品 · 5 色规范 · 渐变立体光影
   function buildAnimeGirl(pose) {
     const sit = pose === 'sit'
-    const SKIN = '#ffe0cf', SKLN = '#e3a284'
-    const HAIR = '#9d6fe0', HRD = '#7748bd', HRL = '#c7a7f5'
-    const WHT = '#ffffff', WSH = '#eef0f7', WLN = '#d6d9e4' // 纯白 + 极淡阴影 + 浅描边
-    const PNK = '#ffc2d6', BLUSH = '#ff9db0'
-    const BIB = '#7fb4ef', BIBLN = '#5f93cf' // 口水巾（淡蓝，可改）
+    // 5 色规范 + 必要肤/发色
+    const CHAR = '#3F4248', CHARL = '#4c5057', CHARD = '#33363c' // 炭灰卫衣
+    const MIST = '#6A6F7A', MISTD = '#565b64'                     // 雾灰（裙/袜）
+    const LAKE = '#89C9D8', GPUR = '#9E8AC8', CREAM = '#F3F0EA'
+    const SKIN = '#f2d3c0', SKSH = '#e2b6a1', SKLN = '#cf9c89'
+    const HR = '#5f4c40', HRLI = '#82695a', HRDK = '#41332b'    // 深雾棕
+    const SIL = '#c9cdd4', SILL = '#e8ebf0', SILD = '#a7acb6'   // 银色立方体
 
-    const fluff = (cx, cy, half, n, r, fill) => {
-      let s = ''
-      for (let i = 0; i < n; i++) { const x = cx - half + (2 * half) * (i / (n - 1)); s += `<circle cx="${x.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${fill}"/>` }
-      return s
-    }
+    // 立方体（等距，3D 感）
+    const cube = (x, y, s, c, cl, cd) => `<g>
+      <polygon points="${x},${(y - s).toFixed(1)} ${(x + s * 0.87).toFixed(1)},${(y - s * 0.5).toFixed(1)} ${x},${y} ${(x - s * 0.87).toFixed(1)},${(y - s * 0.5).toFixed(1)}" fill="${cl}"/>
+      <polygon points="${(x - s * 0.87).toFixed(1)},${(y - s * 0.5).toFixed(1)} ${x},${y} ${x},${(y + s).toFixed(1)} ${(x - s * 0.87).toFixed(1)},${(y + s * 0.5).toFixed(1)}" fill="${c}"/>
+      <polygon points="${(x + s * 0.87).toFixed(1)},${(y - s * 0.5).toFixed(1)} ${x},${y} ${x},${(y + s).toFixed(1)} ${(x + s * 0.87).toFixed(1)},${(y + s * 0.5).toFixed(1)}" fill="${cd}"/></g>`
+    const hollowCube = (x, y, s, col) => `<g fill="none" stroke="${col}" stroke-width="1.1">
+      <polygon points="${x - s},${y - s} ${x + s * 0.5},${y - s * 1.4} ${x + s * 1.6},${y - s * 0.6} ${x + s * 0.1},${y - s * 0.2}"/>
+      <path d="M ${x - s} ${y - s} L ${x - s} ${y + s * 0.5} M ${x + s * 1.6} ${y - s * 0.6} L ${x + s * 1.6} ${y + s} M ${x + s * 0.1} ${y - s * 0.2} L ${x + s * 0.1} ${y + s * 1.1}"/>
+      <polygon points="${x - s},${y + s * 0.5} ${x + s * 0.5},${y + s * 0.1} ${x + s * 1.6},${y + s} ${x + s * 0.1},${y + s * 1.1}"/></g>`
 
-    // 大眼睛：白底 + 大黑眼珠，珠内一道道浅色仪表盘刻度 + 高光
-    const gaugeInIris = () => {
-      const cx = 0, cy = 1, R = 9.5, start = Math.PI * 0.82, span = Math.PI * 1.36
-      let t = ''
-      for (let i = 0; i <= 8; i++) {
-        const a = start + span * (i / 8), big = i % 4 === 0
-        const r1 = R * (big ? 0.5 : 0.66), r2 = R * 0.86
-        t += `<line x1="${(cx + Math.cos(a) * r1).toFixed(1)}" y1="${(cy + Math.sin(a) * r1).toFixed(1)}" x2="${(cx + Math.cos(a) * r2).toFixed(1)}" y2="${(cy + Math.sin(a) * r2).toFixed(1)}" stroke="#9aa4c8" stroke-width="${big ? 1.3 : 0.8}"/>`
-      }
-      const na = start + span * 0.58
-      t += `<line x1="${cx}" y1="${cy}" x2="${(cx + Math.cos(na) * R * 0.72).toFixed(1)}" y2="${(cy + Math.sin(na) * R * 0.72).toFixed(1)}" stroke="#cdd6f2" stroke-width="1.4" stroke-linecap="round"/>`
-      t += `<circle cx="${cx}" cy="${cy}" r="1.6" fill="#cdd6f2"/>`
-      return t
-    }
+    // 招牌眼（小而干净，符合 7.2 头身比例）：石墨灰→湖蓝灰→雾青绿→黑瞳；年轮+水波纹；单主高光+单环境高光
     const eyeContent =
-      `<ellipse cx="0" cy="0" rx="13" ry="17" fill="#fbfcff"/>` +
-      `<ellipse cx="0" cy="1" rx="12" ry="15.5" fill="#17131f"/>` +
-      gaugeInIris() +
-      `<ellipse cx="-4.5" cy="-6.5" rx="4.3" ry="5.6" fill="#ffffff"/>` +
-      `<circle cx="4.6" cy="6.5" r="2.4" fill="#ffffff" opacity="0.92"/>` +
-      `<path d="M -13 -9 Q 0 -20.5 13 -9" stroke="#2a2333" stroke-width="3.2" fill="none" stroke-linecap="round"/>`
-    const eye = (id, cx) => `<g id="${id}" transform="translate(${cx} -46)"><g class="lid">${eyeContent}</g></g>`
+      `<ellipse cx="0" cy="0" rx="5.2" ry="6.6" fill="#f6f4ef"/>` +
+      `<circle cx="0" cy="0.4" r="4.5" fill="url(#gIris)"/>` +
+      `<circle cx="0" cy="0.4" r="3.1" fill="none" stroke="#33404a" stroke-width="0.4" opacity="0.55"/>` +
+      `<path d="M -3.6 1.6 Q 0 0.1 3.6 1.6" fill="none" stroke="#a9cfc6" stroke-width="0.45" opacity="0.55"/>` +
+      `<circle cx="0" cy="0.4" r="1.9" fill="#0a0a0e"/>` +
+      `<ellipse cx="-1.5" cy="-1.7" rx="1.4" ry="1.8" fill="#ffffff"/>` +
+      `<circle cx="1.6" cy="2" r="0.7" fill="#dcefe9" opacity="0.6"/>` +
+      `<path d="M -5.2 -2.6 Q 0 -7 5.2 -2.6" stroke="#2a2530" stroke-width="1.4" fill="none" stroke-linecap="round"/>` +
+      `<path d="M -3.8 3.4 Q 0 4.4 3.8 3.4" stroke="#9a8579" stroke-width="0.5" fill="none" opacity="0.5"/>`
+    const eye = (id, cx) => `<g id="${id}" transform="translate(${cx} -94)"><g class="lid">${eyeContent}</g></g>`
 
-    // 腿：站立 vs 坐下（纯白）
-    const legs = sit
-      ? `<g fill="${WHT}" stroke="${WLN}" stroke-width="2">
-           <path d="M -14 44 Q -40 52 -46 74 Q -47 84 -36 84 L -14 84 Q -6 66 -8 48 Z"/>
-           <path d="M 14 44 Q 40 52 46 74 Q 47 84 36 84 L 14 84 Q 6 66 8 48 Z"/>
-           <ellipse cx="-40" cy="82" rx="12" ry="7" fill="${WSH}"/><ellipse cx="40" cy="82" rx="12" ry="7" fill="${WSH}"/></g>`
-      : `<g fill="${WHT}" stroke="${WLN}" stroke-width="2">
-           <path d="M -20 44 L -22 92 Q -22 100 -12 100 L -8 100 Q -6 70 -8 44 Z"/>
-           <path d="M 20 44 L 22 92 Q 22 100 12 100 L 8 100 Q 6 70 8 44 Z"/>
-           <ellipse cx="-15" cy="99" rx="12" ry="7" fill="${WSH}"/><ellipse cx="15" cy="99" rx="12" ry="7" fill="${WSH}"/></g>`
+    // —— 腿 + 不对称袜 + 厚底鞋（站/坐）——
+    const shoe = (x) => `<g><rect x="${x - 8}" y="94" width="16" height="8" rx="3" fill="${CREAM}" stroke="${MISTD}" stroke-width="1"/>
+        <rect x="${x - 9}" y="100" width="18" height="6" rx="3" fill="${MIST}"/><rect x="${x - 9}" y="104" width="18" height="2.5" fill="${LAKE}"/></g>`
+    const legStand = `
+        <path d="M -11 6 Q -13 60 -10 94 L -2 94 Q -1 50 -2 6 Z" fill="${SKIN}"/>
+        <path d="M 11 6 Q 13 60 10 94 L 2 94 Q 1 50 2 6 Z" fill="${SKIN}"/>
+        <path d="M -12 22 Q -13 60 -10 92 L -2 92 Q -1 56 -2 22 Z" fill="${MIST}" stroke="${MISTD}" stroke-width="1"/>
+        <path d="M 12 46 Q 13 60 10 92 L 2 92 Q 1 60 2 46 Z" fill="${MIST}" stroke="${MISTD}" stroke-width="1"/>
+        <rect x="-12" y="22" width="10" height="3" fill="${LAKE}"/><rect x="2" y="46" width="10" height="3" fill="${LAKE}"/>
+        ${shoe(-7)}${shoe(7)}`
+    const legSit = `
+        <path d="M -11 6 Q -26 30 -30 52 Q -30 60 -20 60 L -8 58 Q -4 30 -3 8 Z" fill="${SKIN}"/>
+        <path d="M 11 6 Q 26 30 30 52 Q 30 60 20 60 L 8 58 Q 4 30 3 8 Z" fill="${SKIN}"/>
+        <path d="M -22 34 Q -30 50 -28 58 L -18 58 Q -12 42 -12 34 Z" fill="${MIST}" stroke="${MISTD}" stroke-width="1"/>
+        <path d="M 20 44 Q 30 52 28 58 L 18 58 Q 14 50 14 44 Z" fill="${MIST}" stroke="${MISTD}" stroke-width="1"/>
+        <g><rect x="-32" y="54" width="18" height="8" rx="3" fill="${CREAM}" stroke="${MISTD}" stroke-width="1"/><rect x="-33" y="60" width="20" height="5" rx="3" fill="${MIST}"/></g>
+        <g><rect x="14" y="54" width="18" height="8" rx="3" fill="${CREAM}" stroke="${MISTD}" stroke-width="1"/><rect x="13" y="60" width="20" height="5" rx="3" fill="${MIST}"/></g>`
+    const legs = sit ? legSit : legStand
 
-    // 纯白狗连体衣：身体 + 爪套 + 肚子小狗鼻
-    const body = `<g>
-        <path d="M -34 -6 Q -40 40 -30 58 Q 0 70 30 58 Q 40 40 34 -6 Q 0 -20 -34 -6 Z" fill="${WHT}" stroke="${WLN}" stroke-width="2"/>
-        <circle cx="0" cy="36" r="4.5" fill="#c2c6d6"/>
-        <path d="M -6 40 Q 0 46 6 40" stroke="#c2c6d6" stroke-width="1.6" fill="none"/>
-        ${fluff(0, -8, 34, 9, 7, WHT)}
-        <g fill="${WHT}" stroke="${WLN}" stroke-width="2">
-          <path d="M -33 2 Q -50 14 -46 34 Q -44 44 -34 40 Q -30 20 -28 6 Z"/>
-          <path d="M 33 2 Q 50 14 46 34 Q 44 44 34 40 Q 30 20 28 6 Z"/></g>
-        ${fluff(-40, 40, 8, 4, 6, WHT)}${fluff(40, 40, 8, 4, 6, WHT)}</g>`
+    // 工装百褶短裙（雾灰渐变 + 褶 + 口袋）
+    const skirt = `<path d="M -26 -4 Q 0 2 26 -4 L 32 22 Q 0 30 -32 22 Z" fill="url(#gSkirt)" stroke="${MISTD}" stroke-width="1.2"/>` +
+      [-20, -10, 0, 10, 20].map(x => `<line x1="${x}" y1="-2" x2="${x * 1.3}" y2="24" stroke="${MISTD}" stroke-width="0.9" opacity="0.6"/>`).join('') +
+      `<rect x="-24" y="6" width="9" height="10" rx="2" fill="none" stroke="${MISTD}" stroke-width="1" opacity="0.7"/>`
 
-    // 颈部倒三角口水巾 + 骨头图案
-    const bone = `<g transform="translate(0 2)" fill="${WHT}" stroke="${BIBLN}" stroke-width="1.2">
-        <rect x="-7" y="-2.6" width="14" height="5.2" rx="2.6"/>
-        <circle cx="-8" cy="-3.4" r="3.1"/><circle cx="-8" cy="3.4" r="3.1"/>
-        <circle cx="8" cy="-3.4" r="3.1"/><circle cx="8" cy="3.4" r="3.1"/></g>`
-    const bib = `<g>
-        <path d="M -24 -8 Q 0 -2 24 -8 L 12 16 Q 0 24 -12 16 Z" fill="${BIB}" stroke="${BIBLN}" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M -24 -8 Q 0 -2 24 -8" fill="none" stroke="${BIBLN}" stroke-width="2"/>
-        ${bone}</g>`
+    // 白色内搭（露在卫衣下摆/领口）
+    const inner = `<path d="M -22 -30 Q 0 -24 22 -30 L 24 -6 Q 0 0 -24 -6 Z" fill="${CREAM}" stroke="#d8d5cc" stroke-width="1"/>`
 
-    // 帽子（狗耳 + 蓬松帽兜，啾啾藏在里面 → 帽兜有两处小鼓包）
-    const dogEars = `<g fill="${WHT}" stroke="${WLN}" stroke-width="2">
-        <path d="M -30 -84 Q -60 -90 -62 -60 Q -60 -44 -42 -50 Q -34 -68 -26 -80 Z"/>
-        <path d="M 30 -84 Q 60 -90 62 -60 Q 60 -44 42 -50 Q 34 -68 26 -80 Z"/></g>
-        <path d="M -47 -73 Q -54 -64 -47 -56 Q -41 -60 -39 -69 Z" fill="${PNK}"/>
-        <path d="M 47 -73 Q 54 -64 47 -56 Q 41 -60 39 -69 Z" fill="${PNK}"/>`
-    // 帽兜：包住头顶/两侧，左右各一鼓包（藏起来的啾啾），下缘毛茸茸
-    const hood = `<path d="M 0 -96 C -40 -96 -52 -84 -56 -66 Q -62 -58 -58 -46 Q -50 -40 -44 -48
-        Q -40 -74 -16 -80 Q 0 -84 16 -80 Q 40 -74 44 -48 Q 50 -40 58 -46 Q 62 -58 56 -66
-        C 52 -84 40 -96 0 -96 Z" fill="${WHT}" stroke="${WLN}" stroke-width="2"/>
-        ${fluff(-40, -44, 12, 5, 7, WHT)}${fluff(40, -44, 12, 5, 7, WHT)}`
-    const face = `<ellipse cx="0" cy="-48" rx="43" ry="45" fill="${SKIN}" stroke="${SKLN}" stroke-width="1.5"/>`
-    // 紫色刘海（露在帽兜前缘下）
-    const bangs = `<path d="M -43 -50 C -47 -82 -30 -96 0 -96 C 30 -96 47 -82 43 -50
-        L 39 -64 L 29 -48 L 21 -68 L 11 -50 L 1 -72 L -9 -50 L -19 -68 L -27 -48 L -37 -64 Z"
-        fill="${HAIR}" stroke="${HRD}" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M -43 -50 C -45 -34 -43 -24 -37 -14 Q -32 -30 -35 -50 Z" fill="${HAIR}" stroke="${HRD}" stroke-width="1.5"/>
-        <path d="M 43 -50 C 45 -34 43 -24 37 -14 Q 32 -30 35 -50 Z" fill="${HAIR}" stroke="${HRD}" stroke-width="1.5"/>
-        <path d="M -18 -76 Q 0 -88 18 -76" stroke="${HRL}" stroke-width="4" fill="none" opacity="0.55" stroke-linecap="round"/>`
-    const faceFeat = `<ellipse cx="-27" cy="-34" rx="8" ry="5" fill="${BLUSH}" opacity="0.6"/>
-        <ellipse cx="27" cy="-34" rx="8" ry="5" fill="${BLUSH}" opacity="0.6"/>
-        <path d="M 0 -36 q 2 2 0 4" stroke="${SKLN}" stroke-width="1.4" fill="none"/>`
-    const mouths = `<g id="mouths" transform="translate(0 -24)">
-        <path id="m-normal" d="M -5 0 Q 0 5 5 0" stroke="#c05a68" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path id="m-happy" d="M -7 -1 Q 0 9 7 -1 Z" fill="#c8546a" visibility="hidden"/>
-        <ellipse id="m-wow" cx="0" cy="2" rx="4" ry="5" fill="#c8546a" visibility="hidden"/>
-        <path id="m-sleepy" d="M -5 1 L 5 1" stroke="#c05a68" stroke-width="2" fill="none" stroke-linecap="round" visibility="hidden"/></g>`
-    const zzz = `<text id="zzz" x="46" y="-66" font-size="15" fill="${HAIR}" visibility="hidden">z</text>`
+    // Oversize 连帽卫衣（炭灰渐变，上宽下窄；帽子搭在背后；袖子垂到手）
+    const hoodie = `
+        <path d="M -30 -70 Q -40 -66 -42 -40 Q -44 -18 -34 -8 L -34 -30 Q -30 -20 -22 -18 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1"/>
+        <path d="M 30 -70 Q 40 -66 42 -40 Q 44 -18 34 -8 L 34 -30 Q 30 -20 22 -18 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1"/>
+        <path d="M -30 -70 Q 0 -78 30 -70 Q 36 -40 30 -14 Q 0 -6 -30 -14 Q -36 -40 -30 -70 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1.2"/>
+        <path d="M -20 -74 Q 0 -66 20 -74 Q 18 -60 0 -58 Q -18 -60 -20 -74 Z" fill="${CHARD}"/>
+        <line x1="-4" y1="-56" x2="-5" y2="-30" stroke="${CREAM}" stroke-width="1.4"/><line x1="4" y1="-56" x2="5" y2="-30" stroke="${CREAM}" stroke-width="1.4"/>
+        <path d="M -12 -34 Q 0 -28 12 -34" fill="none" stroke="${CHARD}" stroke-width="1" opacity="0.6"/>
+        <ellipse cx="-34" cy="-8" rx="6" ry="5" fill="${SKIN}"/><ellipse cx="34" cy="-8" rx="6" ry="5" fill="${SKIN}"/>`
+
+    // —— 头/脸（柔和倒梯形，圆下巴）——
+    const face = `<path d="M -15 -104 Q -16.5 -95 -14.5 -89 Q -11 -82 0 -81 Q 11 -82 14.5 -89 Q 16.5 -95 15 -104 Q 12 -114 0 -114.5 Q -12 -114 -15 -104 Z" fill="url(#gSkin)" stroke="${SKLN}" stroke-width="1"/>`
+    const earL = `<ellipse cx="-15" cy="-95" rx="3.4" ry="5" fill="${SKIN}" stroke="${SKLN}" stroke-width="0.8"/>` // 左耳露出
+    const faceFeat = `<ellipse cx="-8" cy="-88" rx="3.6" ry="2.2" fill="#ff9db0" opacity="0.5"/>
+        <ellipse cx="8" cy="-88" rx="3.6" ry="2.2" fill="#ff9db0" opacity="0.5"/>
+        <path d="M 0 -90 q 1.4 1.4 0 2.8" stroke="${SKLN}" stroke-width="1" fill="none"/>`
+    // 微表情：默认嘴角上扬约 3°
+    const mouths = `<g id="mouths" transform="translate(0 -84)">
+        <path id="m-normal" d="M -3.4 0 Q 0 2.2 3.4 -0.6" stroke="#c07a70" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+        <path id="m-happy" d="M -4 -0.5 Q 0 4.5 4 -0.5 Z" fill="#c8746a" visibility="hidden"/>
+        <ellipse id="m-wow" cx="0" cy="1.2" rx="2.2" ry="2.8" fill="#c8746a" visibility="hidden"/>
+        <path id="m-sleepy" d="M -3.4 0.5 L 3.4 0.5" stroke="#c07a70" stroke-width="1.3" fill="none" stroke-linecap="round" visibility="hidden"/></g>`
+
+    // —— 深雾棕长发：七三分碎刘海（右遮左露）+ 一条细辫 + 腰下长发（自然微卷）——
+    const hairBack = `<path d="M -16 -108 C -30 -104 -34 -80 -30 -50 C -27 -20 -22 10 -18 26 L 18 26 C 22 10 27 -20 30 -50 C 34 -80 30 -104 16 -108 C 8 -112 -8 -112 -16 -108 Z" fill="url(#gHairB)"/>
+        <path d="M 18 -26 Q 30 6 22 28 Q 18 12 14 -20 Z" fill="${HRDK}" opacity="0.5"/>`
+    const braid = `<g stroke="${HRDK}" stroke-width="0.6"><path d="M 20 -30 Q 26 0 22 30" fill="none" stroke="${HR}" stroke-width="3"/>
+        <path d="M 19 -20 L 25 -14 M 25 -8 L 19 -2 M 19 4 L 25 10 M 25 16 L 20 22" /></g>`
+    // 七三分碎刘海：分缝在 x≈-4，右侧厚(遮右)，左侧薄(露左耳/眉)，很多碎发尖
+    const bangs = `<path d="M -15 -103 Q -17 -115 0 -116 Q 17 -115 15 -103
+        Q 14.5 -99 11 -101 Q 13 -109 5 -111 Q 7 -101 1 -103
+        Q 2.5 -111 -4 -111 Q -3.5 -101 -8 -102 Q -6.5 -109 -12 -107 Q -12.5 -101 -15 -103 Z"
+        fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7" stroke-linejoin="round"/>
+        <path d="M 15 -103 Q 21 -94 18.5 -80 Q 15 -74 12.5 -80 Q 15 -92 12 -100 Z" fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7"/>
+        <path d="M -14.5 -101 Q -18 -92 -15 -82 Q -12.5 -86 -12 -96 Z" fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7"/>
+        <path d="M -6 -111 Q 3 -115 11 -110" stroke="${HRLI}" stroke-width="1.3" fill="none" opacity="0.6" stroke-linecap="round"/>`
+
+    // —— 饰品：银色立方发夹 · 三尺寸立方耳饰(左耳) · 悬浮镂空立方项链 · 建筑师风手链 ——
+    const clip = cube(-11, -101, 2.4, SIL, SILL, SILD)
+    const earrings = cube(-15.5, -88, 1.6, GPUR, '#b8a6da', '#7f6cae') + cube(-16, -83, 1.1, LAKE, '#a9dce6', '#5fa9ba') + cube(-14.5, -79, 0.8, SIL, SILL, SILD)
+    const necklace = `<path d="M -10 -76 Q 0 -70 10 -76" fill="none" stroke="${MIST}" stroke-width="0.8"/>` + hollowCube(-2, -70, 2.2, LAKE)
+    const bracelet = sit
+      ? `<g stroke="${MISTD}" stroke-width="0.8" fill="none"><circle cx="-20" cy="56" r="0"/></g>`
+      : `<g><rect x="-36" y="-2" width="7" height="3" rx="1.4" fill="${MIST}"/><rect x="-35" y="-1.4" width="1.4" height="1.8" fill="${LAKE}"/><rect x="-32" y="-1.4" width="1.4" height="1.8" fill="${GPUR}"/></g>`
+
+    const zzz = `<text id="zzz" x="20" y="-108" font-size="12" fill="${HR}" visibility="hidden">z</text>`
     const sparks = `<g id="sparks" fill="#fff" opacity="0"></g>`
 
-    const drop = sit ? 14 : 0
-    return `<svg viewBox="-100 -128 200 244" xmlns="http://www.w3.org/2000/svg">
+    const drop = sit ? 10 : 0
+    const lean = sit ? 'rotate(-4 0 -40)' : '' // 坐姿略前倾
+    const defs = `<defs>
+      <radialGradient id="gSkin" cx="0.5" cy="0.4" r="0.7"><stop offset="0%" stop-color="#ffe6d6"/><stop offset="100%" stop-color="${SKSH}"/></radialGradient>
+      <linearGradient id="gHood" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="${CHARL}"/><stop offset="100%" stop-color="${CHARD}"/></linearGradient>
+      <linearGradient id="gSkirt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${MIST}"/><stop offset="100%" stop-color="${MISTD}"/></linearGradient>
+      <linearGradient id="gHairB" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0%" stop-color="${HRLI}"/><stop offset="55%" stop-color="${HR}"/><stop offset="100%" stop-color="${HRDK}"/></linearGradient>
+      <linearGradient id="gHairF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${HRLI}"/><stop offset="100%" stop-color="${HR}"/></linearGradient>
+      <radialGradient id="gIris" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="#93bcb1"/><stop offset="42%" stop-color="#6f8b99"/><stop offset="80%" stop-color="#454b54"/><stop offset="100%" stop-color="#383d44"/></radialGradient>
+    </defs>`
+
+    return `<svg viewBox="-56 -122 112 232" xmlns="http://www.w3.org/2000/svg">
+      ${defs}
       <g transform="translate(0 ${drop})">
-        ${dogEars}${hood}
-        ${legs}${body}
-        <g fill="${WHT}" stroke="${WLN}" stroke-width="2">
-          <ellipse cx="-40" cy="24" rx="11" ry="13"/><ellipse cx="40" cy="24" rx="11" ry="13"/></g>
-        ${bib}
-        ${face}${bangs}
-        <g id="eyeWrap">${eye('eyeL', -19)}${eye('eyeR', 19)}</g>
-        ${faceFeat}${mouths}${zzz}${sparks}
+        ${hairBack}${braid}
+        <g transform="${lean}">
+          ${legs}${skirt}${inner}${hoodie}${bracelet}
+          ${necklace}
+        </g>
+        ${face}${earL}${earrings}${hairBack ? '' : ''}
+        <g id="eyeWrap">${eye('eyeL', -8)}${eye('eyeR', 8)}</g>
+        ${faceFeat}${mouths}
+        ${bangs}${clip}
+        ${zzz}${sparks}
       </g>
     </svg>`
   }
