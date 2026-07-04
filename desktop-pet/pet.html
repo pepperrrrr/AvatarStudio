@@ -162,33 +162,78 @@
   </div>
 </div>
 <script>
-  // ============ 官方 Claude 星芒（simple-icons 原版路径 + 官方色 #D97757）============
-  const SPARK_PATH = 'm4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z'
-  const DEFAULT_SKIN = `<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
-    <g transform="translate(-96 -96) scale(8)"><path d="${SPARK_PATH}" fill="#d97757"/></g>
-    <circle r="34" fill="#d97757"/>
-    <g id="face" transform="translate(0 4)">
-      <ellipse cx="-18" cy="9" rx="8" ry="4.5" fill="#b85c3d" opacity="0.6"/>
-      <ellipse cx="18" cy="9" rx="8" ry="4.5" fill="#b85c3d" opacity="0.6"/>
-      <g id="eyeL" transform="translate(-13 -4)"><g class="lid">
-        <ellipse rx="6.5" ry="9" fill="#40241a"/>
-        <circle cx="-2" cy="-3.5" r="2.4" fill="#fff"/>
-        <circle cx="2.6" cy="2.5" r="1.2" fill="#fff" opacity="0.85"/>
-      </g></g>
-      <g id="eyeR" transform="translate(13 -4)"><g class="lid">
-        <ellipse rx="6.5" ry="9" fill="#40241a"/>
-        <circle cx="-2" cy="-3.5" r="2.4" fill="#fff"/>
-        <circle cx="2.6" cy="2.5" r="1.2" fill="#fff" opacity="0.85"/>
-      </g></g>
-      <g id="mouths">
-        <path id="m-normal" d="M -5 9 Q 0 13 5 9" stroke="#40241a" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path id="m-happy" d="M -7 8 Q 0 17 7 8 Z" fill="#40241a" visibility="hidden"/>
-        <ellipse id="m-wow" cx="0" cy="11" rx="4" ry="5" fill="#40241a" visibility="hidden"/>
-        <path id="m-sleepy" d="M -5 11 L 5 11" stroke="#40241a" stroke-width="2" fill="none" stroke-linecap="round" visibility="hidden"/>
+  // ============ 官方 Claude Code 像素小家伙（还原终端里那只橘色四腿生物）============
+  function buildClaudePet() {
+    const C = 11 // 像素格大小
+    const O = '#c67a4e' // 身体橘
+    const OD = '#b06a41' // 暗部
+    const OL = '#d68a5e' // 鼻子高光
+    const B = 0.6 // 像素块微微外扩，消除相邻块之间的接缝
+    const px = (c, r, fill, w = 1, h = 1) =>
+      `<rect x="${(c * C - B).toFixed(1)}" y="${(r * C - B).toFixed(1)}" width="${(w * C + B * 2).toFixed(1)}" height="${(h * C + B * 2).toFixed(1)}" fill="${fill}"/>`
+    // 身体像素图（o=身体, k=暗部, n=鼻子高光, .=空）
+    const GRID = [
+      '...oooooo..',
+      '..oooooooo.',
+      '.oooooooooo',
+      '.ooooooooon',
+      '.ooooooooon',
+      '.ooooooookk',
+      '.oooooooo..',
+    ]
+    let cells = ''
+    GRID.forEach((row, r) => {
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c]
+        if (ch === 'o') cells += px(c, r, O)
+        else if (ch === 'k') cells += px(c, r, OD)
+        else if (ch === 'n') cells += px(c, r, OL)
+      }
+    })
+    // 四条腿
+    const legRows = 7
+    ;[2, 4, 6, 8].forEach((c) => {
+      cells += px(c, legRows, O)
+      cells += px(c, legRows + 1, OD)
+    })
+    // 头顶火花（像素十字，白色）
+    const spark = (cx, cy, s) =>
+      `<g fill="#fff"><rect x="${cx - s / 2}" y="${cy - s * 1.5}" width="${s}" height="${s * 3}"/>` +
+      `<rect x="${cx - s * 1.5}" y="${cy - s / 2}" width="${s * 3}" height="${s}"/></g>`
+    const sparks = spark(3.2 * C, -1.3 * C, 4) + spark(6.4 * C, -2.0 * C, 3.2)
+
+    // 眼睛（白色像素块，作为可眨眼/追踪的骨架）
+    const eye = (id, cx, cy) =>
+      `<g id="${id}" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)})"><g class="lid">` +
+      `<rect x="${-C * 0.45}" y="${-C * 0.75}" width="${C * 0.9}" height="${C * 1.5}" fill="#fff"/>` +
+      `<rect x="${-C * 0.1}" y="${-C * 0.1}" width="${C * 0.32}" height="${C * 0.4}" fill="#5a3a28"/>` +
+      `</g></g>`
+    const eyeL = eye('eyeL', 3.0 * C, 2.0 * C)
+    const eyeR = eye('eyeR', 5.2 * C, 2.0 * C)
+
+    // 表情骨架（像素小嘴，藏在眼下方；点击换心情用）
+    const mY = 3.9 * C
+    const mX = 4.1 * C
+    const mouths =
+      `<g id="mouths" fill="#7a4a30">` +
+      `<rect id="m-normal" x="${mX}" y="${mY}" width="${C * 0.9}" height="${C * 0.4}"/>` +
+      `<g id="m-happy" visibility="hidden"><rect x="${mX - C * 0.3}" y="${mY}" width="${C * 0.5}" height="${C * 0.4}"/><rect x="${mX + C * 0.5}" y="${mY}" width="${C * 0.5}" height="${C * 0.4}"/><rect x="${mX + C * 0.1}" y="${mY + C * 0.35}" width="${C * 0.5}" height="${C * 0.4}"/></g>` +
+      `<rect id="m-wow" x="${mX + C * 0.2}" y="${mY - C * 0.1}" width="${C * 0.6}" height="${C * 0.7}" visibility="hidden"/>` +
+      `<rect id="m-sleepy" x="${mX - C * 0.1}" y="${mY + C * 0.2}" width="${C * 1.2}" height="${C * 0.3}" visibility="hidden"/>` +
+      `</g>`
+
+    const zzz = `<text id="zzz" x="${8 * C}" y="${-0.5 * C}" font-size="16" fill="#c67a4e" visibility="hidden">z</text>`
+
+    // 居中：网格宽约 11 格、含腿高约 9 格，平移到 viewBox 中心
+    const ox = -5.5 * C
+    const oy = -4.2 * C
+    return `<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      <g transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)})">
+        ${sparks}${cells}${eyeL}${eyeR}${mouths}${zzz}
       </g>
-      <text id="zzz" x="30" y="-20" font-size="13" fill="#8f4f35" visibility="hidden">z Z</text>
-    </g>
-  </svg>`
+    </svg>`
+  }
+  const DEFAULT_SKIN = buildClaudePet()
 
   // ============ 程序化桌宠生成器：一句话 → 带动画骨架的 SVG（离线/免费/即时）============
   function shade(hex, f) {
