@@ -163,86 +163,47 @@
   </div>
 </div>
 <script>
-  // ============ 官方 Claude Code 像素小家伙（还原终端里那只橘色四腿生物）============
-  // 忠实还原 Clawd：纯矩形、官方橘 #DD775B、四条腿、白眼睛、thinking 火花
+  // ============ 官方吉祥物 Clawd —— 移植自 stevysmith/clawd-react (MIT) 的精确几何 ============
+  // 纯矩形、平顶身体、两侧 arm-nub、深色方眼、四条深色腿；颜色取自其 constants.ts
   function buildClaudePet() {
-    const C = 8 // 像素格
-    const O = '#cf7a54'  // 身体橘（略偏 Clawd 官方 #DD775B 的暖调）
-    const OD = '#b3653f' // 暗部/底边
-    const OL = '#e0996e' // 鼻子/高光
-    const B = 0.55       // 像素块微外扩消接缝
-    const px = (c, r, fill, w = 1, h = 1) =>
-      `<rect x="${(c * C - B).toFixed(1)}" y="${(r * C - B).toFixed(1)}" width="${(w * C + B * 2).toFixed(1)}" height="${(h * C + B * 2).toFixed(1)}" fill="${fill}"/>`
+    const u = 8
+    const BODY = '#C27C5C', DARK = '#8B5A42', EYE = '#1a1a1a'
+    const R = (x, y, w, h, f) => `<rect x="${(x * u).toFixed(1)}" y="${(y * u).toFixed(1)}" width="${(w * u).toFixed(1)}" height="${(h * u).toFixed(1)}" fill="${f}"/>`
 
-    // 身体像素图（o=身体, d=暗部, s=鼻子高光, .=空）—— 宽 16 格、矮胖、右侧鼻子 bump
-    const GRID = [
-      '......oooo......',
-      '....oooooooooo..',
-      '...oooooooooooo.',
-      '..oooooooooooooo',
-      '..ooooooooooooos',
-      '..ooooooooooooss',
-      '.oooooooooooooss',
-      '.oooooooooooooss',
-      '.ooooooooooooos.',
-      '.oooooooooooooo.',
-      '..oooooooooooo..',
-      '..dddddddddddd..',
-    ]
-    let cells = ''
-    GRID.forEach((row, r) => {
-      for (let c = 0; c < row.length; c++) {
-        const ch = row[c]
-        if (ch === 'o') cells += px(c, r, O)
-        else if (ch === 'd') cells += px(c, r, OD)
-        else if (ch === 's') cells += px(c, r, OL)
-      }
-    })
+    // 身体（12×7）+ 两侧手臂小突起（3.2u 高度处）
+    const body = R(1, 0, 12, 7, BODY)
+    const arms = R(-0.5, 3.2, 1.5, 1.8, BODY) + R(13, 3.2, 1.5, 1.8, BODY)
 
-    // 四条腿（可动：id leg0..3，走路时上下摆）—— 位置照 Clawd 反解 x≈11/32/64/85
-    const legCols = [2.2, 5.2, 9.6, 12.6]
+    // 四条腿（深色，x=2/3.8/9/10.8，可动 id leg0..3）
+    const legX = [2, 3.8, 9, 10.8]
     let legs = ''
-    legCols.forEach((c, i) => {
-      legs +=
-        `<g class="leg" id="leg${i}">` +
-        px(c, 12, O, 1.4, 1) +
-        px(c, 13, OD, 1.4, 0.7) +
-        `</g>`
-    })
+    legX.forEach((x, i) => { legs += `<g class="leg" id="leg${i}">${R(x, 7, 1.2, 2.5, DARK)}</g>` })
 
-    // 头顶 thinking 火花（像素十字，白色）
-    const spark = (cx, cy, s) =>
-      `<g class="spark" fill="#fff"><rect x="${cx - s / 2}" y="${cy - s * 1.5}" width="${s}" height="${s * 3}"/>` +
-      `<rect x="${cx - s * 1.5}" y="${cy - s / 2}" width="${s * 3}" height="${s}"/></g>`
-    const sparks = `<g id="sparks">${spark(4.5 * C, -0.9 * C, 4) + spark(8 * C, -1.7 * C, 3.2)}</g>`
+    // 眼睛：深色方块（原版 3.5u/9.5u 处，宽1u 高2u），包成眨眼/追踪骨架
+    const eye = (id, cx) =>
+      `<g id="${id}" transform="translate(${(cx * u).toFixed(1)} ${(2.5 * u).toFixed(1)})"><g class="lid">` +
+      `<rect x="${-0.5 * u}" y="${-1 * u}" width="${u}" height="${2 * u}" fill="${EYE}"/></g></g>`
+    const eyeL = eye('eyeL', 4)
+    const eyeR = eye('eyeR', 10)
 
-    // 眼睛（白色像素块 + 深瞳，作为眨眼/追踪骨架）
-    const eye = (id, cx, cy) =>
-      `<g id="${id}" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)})"><g class="lid">` +
-      `<rect x="${-C * 0.7}" y="${-C * 1.1}" width="${C * 1.4}" height="${C * 2.2}" fill="#fff"/>` +
-      `<rect x="${-C * 0.25}" y="${-C * 0.2}" width="${C * 0.7}" height="${C * 0.9}" fill="#3a2418"/>` +
-      `</g></g>`
-    const eyeL = eye('eyeL', 6 * C, 5 * C)
-    const eyeR = eye('eyeR', 9.4 * C, 5 * C)
-
-    // 表情骨架（像素小嘴/鼻）
-    const mY = 7.4 * C, mX = 7.2 * C
+    // 表情骨架（Clawd 本身无嘴，这里放一个很淡的小嘴支持换心情）
+    const mX = 6.4 * u, mY = 4.7 * u
     const mouths =
-      `<g id="mouths" fill="#6f4328">` +
-      `<rect id="m-normal" x="${mX}" y="${mY}" width="${C * 1.4}" height="${C * 0.5}"/>` +
-      `<g id="m-happy" visibility="hidden"><rect x="${mX - C * 0.4}" y="${mY - C * 0.1}" width="${C * 0.7}" height="${C * 0.5}"/><rect x="${mX + C * 1}" y="${mY - C * 0.1}" width="${C * 0.7}" height="${C * 0.5}"/><rect x="${mX + C * 0.2}" y="${mY + C * 0.4}" width="${C * 1}" height="${C * 0.5}"/></g>` +
-      `<rect id="m-wow" x="${mX + C * 0.3}" y="${mY - C * 0.2}" width="${C * 0.9}" height="${C * 1}" visibility="hidden"/>` +
-      `<rect id="m-sleepy" x="${mX - C * 0.1}" y="${mY + C * 0.2}" width="${C * 1.6}" height="${C * 0.4}" visibility="hidden"/>` +
+      `<g id="mouths" fill="${EYE}">` +
+      `<rect id="m-normal" x="${mX}" y="${mY}" width="${1.2 * u}" height="${0.3 * u}"/>` +
+      `<g id="m-happy" visibility="hidden"><rect x="${mX - 0.3 * u}" y="${mY - 0.1 * u}" width="${0.5 * u}" height="${0.4 * u}"/><rect x="${mX + u}" y="${mY - 0.1 * u}" width="${0.5 * u}" height="${0.4 * u}"/><rect x="${mX + 0.2 * u}" y="${mY + 0.35 * u}" width="${0.9 * u}" height="${0.4 * u}"/></g>` +
+      `<rect id="m-wow" x="${mX + 0.25 * u}" y="${mY - 0.15 * u}" width="${0.7 * u}" height="${0.8 * u}" visibility="hidden"/>` +
+      `<rect id="m-sleepy" x="${mX - 0.1 * u}" y="${mY + 0.15 * u}" width="${1.4 * u}" height="${0.3 * u}" visibility="hidden"/>` +
       `</g>`
 
-    const zzz = `<text id="zzz" x="${13 * C}" y="${2 * C}" font-size="15" fill="#cf7a54" visibility="hidden">z</text>`
+    // thinking 火花（纯白十字，头顶）
+    const spark = (cx, cy, s) =>
+      `<rect x="${cx - s / 2}" y="${cy - s * 1.5}" width="${s}" height="${s * 3}"/><rect x="${cx - s * 1.5}" y="${cy - s / 2}" width="${s * 3}" height="${s}"/>`
+    const sparks = `<g id="sparks" fill="#fff">${spark(4.5 * u, -1.6 * u, 4) + spark(9 * u, -2.2 * u, 3.2)}</g>`
+    const zzz = `<text id="zzz" x="${13.5 * u}" y="${1 * u}" font-size="15" fill="${BODY}" visibility="hidden">z</text>`
 
-    // 居中平移
-    const ox = -8 * C, oy = -6.8 * C
-    return `<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-      <g transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)})">
-        ${sparks}${cells}${legs}${eyeL}${eyeR}${mouths}${zzz}
-      </g>
+    return `<svg viewBox="-20 -28 152 122" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      ${sparks}${body}${arms}${legs}${eyeL}${eyeR}${mouths}${zzz}
     </svg>`
   }
   const DEFAULT_SKIN = buildClaudePet()
@@ -641,9 +602,9 @@
     shadowEl.style.transform = `translateX(${petX.toFixed(1)}px) scaleX(${sc.toFixed(2)})`
     shadowEl.style.opacity = String(0.85 - kickHop * 0.4)
 
-    // 头顶 thinking 火花：只在 idle/思考时显示
+    // 头顶 thinking 火花：只在 idle（发呆/思考）时亮起，否则完全隐藏
     const sparks = svg.querySelector('#sparks')
-    if (sparks) sparks.style.opacity = state === 'idle' ? '1' : '0.15'
+    if (sparks) sparks.style.opacity = state === 'idle' ? '1' : '0'
   }
 
   // —— 点击互动：靠近球就踢，否则换心情 ——
