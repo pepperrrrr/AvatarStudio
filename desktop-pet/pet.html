@@ -7,47 +7,44 @@
   html, body { margin: 0; background: transparent; overflow: hidden; user-select: none; }
   #stage {
     position: relative;
-    width: 230px;
+    width: 340px;
     height: 300px;
     -webkit-app-region: drag;
   }
+  /* 舞台底部一条不可见地面，桌宠和足球都踩在 floorY 上 */
   #petWrap {
     position: absolute;
-    left: 15px;
-    top: 64px;
+    left: 70px;   /* home 位置，JS 用 translateX 让它左右走动 */
+    top: 60px;
     width: 200px;
     height: 200px;
-    animation: bob 3.2s ease-in-out infinite;
+    -webkit-app-region: no-drag; /* 点身体互动，不触发拖窗 */
+    cursor: pointer;
+    will-change: transform;
   }
-  @keyframes bob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-7px); }
-  }
-  #petSvg { width: 100%; height: 100%; transition: transform .15s linear; overflow: visible; }
+  #petSvg { width: 100%; height: 100%; overflow: visible; }
   #shadow {
     position: absolute;
-    left: 55px;
-    bottom: 36px;
+    top: 236px;   /* 贴着 floorY，JS 跟着桌宠横移 */
+    left: 110px;
     width: 120px;
-    height: 18px;
+    height: 16px;
     border-radius: 50%;
     background: radial-gradient(ellipse, rgba(0,0,0,.32), transparent 70%);
-    animation: shadowPulse 3.2s ease-in-out infinite;
+    will-change: transform;
   }
-  @keyframes shadowPulse {
-    0%, 100% { transform: scaleX(1); opacity: .9; }
-    50% { transform: scaleX(.86); opacity: .6; }
-  }
-  #faceHit {
+  #ball {
     position: absolute;
-    left: 75px;
-    top: 124px;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
+    top: 0; left: 0;
+    width: 30px;
+    height: 30px;
+    display: none;
     -webkit-app-region: no-drag;
     cursor: pointer;
+    will-change: transform;
+    z-index: 4;
   }
+  #ball.on { display: block; }
   .sideBtn {
     position: absolute;
     right: 2px;
@@ -149,10 +146,14 @@
 <div id="stage">
   <div id="bubble" class="bubble"></div>
   <div id="shadow"></div>
-  <div id="petWrap">
+  <div id="petWrap" title="点我互动 · 我会自己走动和踢球">
     <svg id="petSvg" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
-  <div id="faceHit" title="点我一下"></div>
+  <svg id="ball" viewBox="0 0 30 30" title="点我踢球">
+    <circle cx="15" cy="15" r="14" fill="#fff" stroke="#2e2a33" stroke-width="1.5"/>
+    <path d="M15 6 L20 10 L18 16 L12 16 L10 10 Z" fill="#2e2a33"/>
+    <path d="M15 6 L15 2 M20 10 L25 8 M18 16 L21 21 M12 16 L9 21 M10 10 L5 8" stroke="#2e2a33" stroke-width="1.2"/>
+  </svg>
   <button id="close" class="sideBtn" title="退出桌宠">✕</button>
   <button id="gen" class="sideBtn" title="用一句话生成新桌宠">✎</button>
   <button id="reset" class="sideBtn" title="换回小 Claude">↺</button>
@@ -163,73 +164,84 @@
 </div>
 <script>
   // ============ 官方 Claude Code 像素小家伙（还原终端里那只橘色四腿生物）============
+  // 忠实还原 Clawd：纯矩形、官方橘 #DD775B、四条腿、白眼睛、thinking 火花
   function buildClaudePet() {
-    const C = 11 // 像素格大小
-    const O = '#c67a4e' // 身体橘
-    const OD = '#b06a41' // 暗部
-    const OL = '#d68a5e' // 鼻子高光
-    const B = 0.6 // 像素块微微外扩，消除相邻块之间的接缝
+    const C = 8 // 像素格
+    const O = '#cf7a54'  // 身体橘（略偏 Clawd 官方 #DD775B 的暖调）
+    const OD = '#b3653f' // 暗部/底边
+    const OL = '#e0996e' // 鼻子/高光
+    const B = 0.55       // 像素块微外扩消接缝
     const px = (c, r, fill, w = 1, h = 1) =>
       `<rect x="${(c * C - B).toFixed(1)}" y="${(r * C - B).toFixed(1)}" width="${(w * C + B * 2).toFixed(1)}" height="${(h * C + B * 2).toFixed(1)}" fill="${fill}"/>`
-    // 身体像素图（o=身体, k=暗部, n=鼻子高光, .=空）
+
+    // 身体像素图（o=身体, d=暗部, s=鼻子高光, .=空）—— 宽 16 格、矮胖、右侧鼻子 bump
     const GRID = [
-      '...oooooo..',
-      '..oooooooo.',
-      '.oooooooooo',
-      '.ooooooooon',
-      '.ooooooooon',
-      '.ooooooookk',
-      '.oooooooo..',
+      '......oooo......',
+      '....oooooooooo..',
+      '...oooooooooooo.',
+      '..oooooooooooooo',
+      '..ooooooooooooos',
+      '..ooooooooooooss',
+      '.oooooooooooooss',
+      '.oooooooooooooss',
+      '.ooooooooooooos.',
+      '.oooooooooooooo.',
+      '..oooooooooooo..',
+      '..dddddddddddd..',
     ]
     let cells = ''
     GRID.forEach((row, r) => {
       for (let c = 0; c < row.length; c++) {
         const ch = row[c]
         if (ch === 'o') cells += px(c, r, O)
-        else if (ch === 'k') cells += px(c, r, OD)
-        else if (ch === 'n') cells += px(c, r, OL)
+        else if (ch === 'd') cells += px(c, r, OD)
+        else if (ch === 's') cells += px(c, r, OL)
       }
     })
-    // 四条腿
-    const legRows = 7
-    ;[2, 4, 6, 8].forEach((c) => {
-      cells += px(c, legRows, O)
-      cells += px(c, legRows + 1, OD)
-    })
-    // 头顶火花（像素十字，白色）
-    const spark = (cx, cy, s) =>
-      `<g fill="#fff"><rect x="${cx - s / 2}" y="${cy - s * 1.5}" width="${s}" height="${s * 3}"/>` +
-      `<rect x="${cx - s * 1.5}" y="${cy - s / 2}" width="${s * 3}" height="${s}"/></g>`
-    const sparks = spark(3.2 * C, -1.3 * C, 4) + spark(6.4 * C, -2.0 * C, 3.2)
 
-    // 眼睛（白色像素块，作为可眨眼/追踪的骨架）
+    // 四条腿（可动：id leg0..3，走路时上下摆）—— 位置照 Clawd 反解 x≈11/32/64/85
+    const legCols = [2.2, 5.2, 9.6, 12.6]
+    let legs = ''
+    legCols.forEach((c, i) => {
+      legs +=
+        `<g class="leg" id="leg${i}">` +
+        px(c, 12, O, 1.4, 1) +
+        px(c, 13, OD, 1.4, 0.7) +
+        `</g>`
+    })
+
+    // 头顶 thinking 火花（像素十字，白色）
+    const spark = (cx, cy, s) =>
+      `<g class="spark" fill="#fff"><rect x="${cx - s / 2}" y="${cy - s * 1.5}" width="${s}" height="${s * 3}"/>` +
+      `<rect x="${cx - s * 1.5}" y="${cy - s / 2}" width="${s * 3}" height="${s}"/></g>`
+    const sparks = `<g id="sparks">${spark(4.5 * C, -0.9 * C, 4) + spark(8 * C, -1.7 * C, 3.2)}</g>`
+
+    // 眼睛（白色像素块 + 深瞳，作为眨眼/追踪骨架）
     const eye = (id, cx, cy) =>
       `<g id="${id}" transform="translate(${cx.toFixed(1)} ${cy.toFixed(1)})"><g class="lid">` +
-      `<rect x="${-C * 0.45}" y="${-C * 0.75}" width="${C * 0.9}" height="${C * 1.5}" fill="#fff"/>` +
-      `<rect x="${-C * 0.1}" y="${-C * 0.1}" width="${C * 0.32}" height="${C * 0.4}" fill="#5a3a28"/>` +
+      `<rect x="${-C * 0.7}" y="${-C * 1.1}" width="${C * 1.4}" height="${C * 2.2}" fill="#fff"/>` +
+      `<rect x="${-C * 0.25}" y="${-C * 0.2}" width="${C * 0.7}" height="${C * 0.9}" fill="#3a2418"/>` +
       `</g></g>`
-    const eyeL = eye('eyeL', 3.0 * C, 2.0 * C)
-    const eyeR = eye('eyeR', 5.2 * C, 2.0 * C)
+    const eyeL = eye('eyeL', 6 * C, 5 * C)
+    const eyeR = eye('eyeR', 9.4 * C, 5 * C)
 
-    // 表情骨架（像素小嘴，藏在眼下方；点击换心情用）
-    const mY = 3.9 * C
-    const mX = 4.1 * C
+    // 表情骨架（像素小嘴/鼻）
+    const mY = 7.4 * C, mX = 7.2 * C
     const mouths =
-      `<g id="mouths" fill="#7a4a30">` +
-      `<rect id="m-normal" x="${mX}" y="${mY}" width="${C * 0.9}" height="${C * 0.4}"/>` +
-      `<g id="m-happy" visibility="hidden"><rect x="${mX - C * 0.3}" y="${mY}" width="${C * 0.5}" height="${C * 0.4}"/><rect x="${mX + C * 0.5}" y="${mY}" width="${C * 0.5}" height="${C * 0.4}"/><rect x="${mX + C * 0.1}" y="${mY + C * 0.35}" width="${C * 0.5}" height="${C * 0.4}"/></g>` +
-      `<rect id="m-wow" x="${mX + C * 0.2}" y="${mY - C * 0.1}" width="${C * 0.6}" height="${C * 0.7}" visibility="hidden"/>` +
-      `<rect id="m-sleepy" x="${mX - C * 0.1}" y="${mY + C * 0.2}" width="${C * 1.2}" height="${C * 0.3}" visibility="hidden"/>` +
+      `<g id="mouths" fill="#6f4328">` +
+      `<rect id="m-normal" x="${mX}" y="${mY}" width="${C * 1.4}" height="${C * 0.5}"/>` +
+      `<g id="m-happy" visibility="hidden"><rect x="${mX - C * 0.4}" y="${mY - C * 0.1}" width="${C * 0.7}" height="${C * 0.5}"/><rect x="${mX + C * 1}" y="${mY - C * 0.1}" width="${C * 0.7}" height="${C * 0.5}"/><rect x="${mX + C * 0.2}" y="${mY + C * 0.4}" width="${C * 1}" height="${C * 0.5}"/></g>` +
+      `<rect id="m-wow" x="${mX + C * 0.3}" y="${mY - C * 0.2}" width="${C * 0.9}" height="${C * 1}" visibility="hidden"/>` +
+      `<rect id="m-sleepy" x="${mX - C * 0.1}" y="${mY + C * 0.2}" width="${C * 1.6}" height="${C * 0.4}" visibility="hidden"/>` +
       `</g>`
 
-    const zzz = `<text id="zzz" x="${8 * C}" y="${-0.5 * C}" font-size="16" fill="#c67a4e" visibility="hidden">z</text>`
+    const zzz = `<text id="zzz" x="${13 * C}" y="${2 * C}" font-size="15" fill="#cf7a54" visibility="hidden">z</text>`
 
-    // 居中：网格宽约 11 格、含腿高约 9 格，平移到 viewBox 中心
-    const ox = -5.5 * C
-    const oy = -4.2 * C
+    // 居中平移
+    const ox = -8 * C, oy = -6.8 * C
     return `<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
       <g transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)})">
-        ${sparks}${cells}${eyeL}${eyeR}${mouths}${zzz}
+        ${sparks}${cells}${legs}${eyeL}${eyeR}${mouths}${zzz}
       </g>
     </svg>`
   }
@@ -466,6 +478,7 @@
     lids = [...svg.querySelectorAll('.lid')]
     eyeL = svg.querySelector('#eyeL'); eyeR = svg.querySelector('#eyeR'); zzz = svg.querySelector('#zzz')
     baseL = parseBase(eyeL, [-13, -4]); baseR = parseBase(eyeR, [13, -4])
+    if (typeof refreshLegs === 'function') refreshLegs()
     if (persist) { try { localStorage.setItem('petSkin', svgText) } catch {} }
     setMood(mood)
     return true
@@ -487,33 +500,165 @@
     for (const m of MOODS) { const el = svg.querySelector('#m-' + m); if (el) el.setAttribute('visibility', m === id ? 'visible' : 'hidden') }
     if (zzz) zzz.setAttribute('visibility', id === 'sleepy' ? 'visible' : 'hidden')
   }
+
+  // ============ 自主行为系统（走动 / 踢球 / 打盹）============
+  const stage = document.getElementById('stage')
+  const petWrap = document.getElementById('petWrap')
+  const shadowEl = document.getElementById('shadow')
+  const ballEl = document.getElementById('ball')
+  const HOME_CX = 170          // petWrap 中心在舞台的 x（left70 + 宽100）
+  const WALK_MIN = -66, WALK_MAX = 104 // petX 允许范围
+  const FLOOR = 250, BALL_R = 15, WALL_L = 16, WALL_R = 324
+
+  let petX = 0, dir = 1, walkPhase = 0, bobY = 0, kickHop = 0
+  let state = 'idle', stateUntil = 0, targetX = 0
+  let legEls = []
+  const ball = { x: 200, y: FLOOR, vx: 0, vy: 0, on: false, restT: 0 }
+  let kickCd = 0
+
+  function petCenterX() { return HOME_CX + petX }
+  function frontX() { return petCenterX() + dir * 40 }
+
+  function refreshLegs() { legEls = [...svg.querySelectorAll('.leg')] }
+
+  function spawnBall() {
+    ball.x = Math.min(WALL_R - 20, Math.max(WALL_L + 20, petCenterX() + dir * 70))
+    ball.y = FLOOR - 80; ball.vx = 0; ball.vy = 0; ball.on = true; ball.restT = 0
+    ballEl.classList.add('on')
+  }
+  function hideBall() { ball.on = false; ballEl.classList.remove('on') }
+
+  function pickBehavior(now) {
+    const r = Math.random()
+    if (r < 0.30) { state = 'idle'; stateUntil = now + 2500 + Math.random() * 3000 }
+    else if (r < 0.58) {
+      state = 'walk'; targetX = WALK_MIN + Math.random() * (WALK_MAX - WALK_MIN)
+      stateUntil = now + 4000 + Math.random() * 4000
+    } else if (r < 0.9) {
+      state = 'soccer'; if (!ball.on) spawnBall(); stateUntil = now + 9000 + Math.random() * 6000
+      if (mood === 3) setMood(0)
+    } else {
+      state = 'sleep'; setMood(3); stateUntil = now + 5000 + Math.random() * 5000
+    }
+  }
+
+  function stepBall(dt) {
+    if (!ball.on) return
+    ball.vy += 0.55 * dt
+    ball.x += ball.vx * dt; ball.y += ball.vy * dt
+    if (ball.y > FLOOR) { ball.y = FLOOR; ball.vy *= -0.62; ball.vx *= 0.86; if (Math.abs(ball.vy) < 1.2) ball.vy = 0 }
+    if (ball.x < WALL_L) { ball.x = WALL_L; ball.vx = Math.abs(ball.vx) * 0.7 }
+    if (ball.x > WALL_R) { ball.x = WALL_R; ball.vx = -Math.abs(ball.vx) * 0.7 }
+    const rolling = ball.y >= FLOOR - 0.5
+    if (rolling) ball.vx *= 0.97
+    const still = rolling && Math.abs(ball.vx) < 0.3 && Math.abs(ball.vy) < 0.3
+    ball.restT = still ? ball.restT + dt : 0
+    const spin = ball.x * 6
+    ballEl.style.transform = `translate(${(ball.x - BALL_R).toFixed(1)}px, ${(ball.y - BALL_R).toFixed(1)}px) rotate(${spin.toFixed(0)}deg)`
+  }
+
+  function kick(power) {
+    if (!ball.on) return
+    ball.vx = dir * (4.5 + Math.random() * 3.5) * power
+    ball.vy = -(5 + Math.random() * 3) * power
+    kickHop = 1
+    if (Math.random() < 0.4) burst(frontX(), FLOOR - 10, '⚽')
+  }
+
+  function burst(sx, sy, txt) {
+    const fx = document.createElement('span')
+    fx.className = 'fx'; fx.textContent = txt
+    fx.style.left = sx + 'px'; fx.style.top = (sy - 20) + 'px'
+    fx.style.color = txt === '⚽' ? '#fff' : (Math.random() < 0.5 ? '#ff6b8a' : '#d97757')
+    stage.appendChild(fx); setTimeout(() => fx.remove(), 950)
+  }
+
+  let last = performance.now()
   function loop(now) {
     requestAnimationFrame(loop)
-    gx += (tx - gx) * 0.12; gy += (ty - gy) * 0.12
+    const dt = Math.min(2.5, (now - last) / 16.67); last = now
+
+    // 眨眼
     if (now >= nextBlink) { blinkStart = now; nextBlink = now + 2200 + Math.random() * 3300 }
     const ph = (now - blinkStart) / 130
     blink = ph >= 0 && ph <= 1 ? Math.sin(Math.PI * ph) : 0
     const openY = MOODS[mood] === 'sleepy' ? 0.22 : Math.max(0.06, 1 - blink)
     lids.forEach((l) => { l.style.transform = `scale(1, ${openY})` })
+
+    // 行为状态机
+    if (now > stateUntil) pickBehavior(now)
+    let walking = false
+    if (state === 'walk') {
+      const d = targetX - petX
+      if (Math.abs(d) > 2) { dir = d > 0 ? 1 : -1; petX += dir * 1.4 * dt; walking = true }
+      else stateUntil = Math.min(stateUntil, now + 400)
+    } else if (state === 'soccer') {
+      if (!ball.on) spawnBall()
+      const gap = ball.x - petCenterX()
+      dir = gap >= 0 ? 1 : -1
+      const want = ball.x - dir * 34
+      if (Math.abs(want - petCenterX()) > 3 && Math.abs(gap) > 24) {
+        petX += dir * 1.7 * dt; petX = Math.max(WALL_L - HOME_CX + 40, Math.min(WALL_R - HOME_CX - 40, petX)); walking = true
+      }
+      // 够到球就踢
+      if (kickCd > 0) kickCd -= dt
+      if (Math.abs(frontX() - ball.x) < 30 && ball.y > FLOOR - 40 && kickCd <= 0) { kick(1); kickCd = 22 + Math.random() * 20 }
+    } else if (state === 'sleep') {
+      if (mood !== 3) setMood(3)
+    }
+    petX = Math.max(WALK_MIN, Math.min(WALK_MAX, petX))
+
+    // 球物理（任何状态都在滚，滚停一会儿就收起）
+    stepBall(dt)
+    if (ball.on && state !== 'soccer' && ball.restT > 90) hideBall()
+
+    // 腿部走路循环
+    walkPhase += (walking ? 0.28 : 0.06) * dt
+    if (legEls.length) {
+      legEls.forEach((leg, i) => {
+        const off = walking ? Math.sin(walkPhase + i * (Math.PI / 2)) * 3.5 : 0
+        leg.style.transform = `translateY(${off.toFixed(2)}px)`
+      })
+    }
+
+    // 浮动 & 踢球小跳
+    const baseBob = state === 'sleep' ? Math.sin(now / 900) * 2 : Math.sin(now / (walking ? 200 : 1300)) * (walking ? 4 : 6)
+    if (kickHop > 0) kickHop = Math.max(0, kickHop - 0.08 * dt)
+    bobY = baseBob - kickHop * 10
+
+    // 视线：走动时朝前看，否则跟光标
+    const lookX = walking || state === 'soccer' ? dir * 0.7 : gx
+    gx += ((walking || state === 'soccer' ? dir * 0.7 : tx) - gx) * 0.1
+    gy += (ty - gy) * 0.1
     const ex = gx * 4, ey = gy * 3
     if (eyeL) eyeL.setAttribute('transform', `translate(${baseL[0] + ex} ${baseL[1] + ey})`)
     if (eyeR) eyeR.setAttribute('transform', `translate(${baseR[0] + ex} ${baseR[1] + ey})`)
-    svg.style.transform = `rotate(${gx * 5}deg)`
+
+    // 应用位移 / 朝向
+    petWrap.style.transform = `translate(${petX.toFixed(1)}px, ${bobY.toFixed(1)}px)`
+    svg.style.transform = `scaleX(${dir}) rotate(${(gx * 4 * dir).toFixed(1)}deg)`
+    const sc = 1 - kickHop * 0.15 + Math.sin(now / (walking ? 200 : 1300)) * 0.04
+    shadowEl.style.transform = `translateX(${petX.toFixed(1)}px) scaleX(${sc.toFixed(2)})`
+    shadowEl.style.opacity = String(0.85 - kickHop * 0.4)
+
+    // 头顶 thinking 火花：只在 idle/思考时显示
+    const sparks = svg.querySelector('#sparks')
+    if (sparks) sparks.style.opacity = state === 'idle' ? '1' : '0.15'
   }
 
-  // —— 点击互动 ——
-  document.getElementById('faceHit').addEventListener('click', () => {
+  // —— 点击互动：靠近球就踢，否则换心情 ——
+  function interact() {
+    if (ball.on && Math.abs(ball.x - petCenterX()) < 90) {
+      dir = ball.x >= petCenterX() ? 1 : -1; kick(1.2)
+      say('射门！⚽'); return
+    }
+    if (!ball.on && Math.random() < 0.4) { state = 'soccer'; spawnBall(); stateUntil = performance.now() + 12000; say('一起踢球吧 ⚽'); return }
     setMood(mood + 1)
-    const fx = document.createElement('span')
-    fx.className = 'fx'
-    fx.textContent = Math.random() < 0.5 ? '♥' : '✦'
-    fx.style.left = 95 + (Math.random() * 40 - 20) + 'px'
-    fx.style.top = '112px'
-    fx.style.color = Math.random() < 0.5 ? '#ff6b8a' : '#d97757'
-    document.getElementById('stage').appendChild(fx)
-    setTimeout(() => fx.remove(), 950)
+    burst(petCenterX(), FLOOR - 60, Math.random() < 0.5 ? '♥' : '✦')
     say(mood === 1 ? '嘿嘿 (＾▽＾)' : mood === 2 ? '哇哦！' : mood === 3 ? '休息一下… z Z' : '继续干活！')
-  })
+  }
+  petWrap.addEventListener('click', interact)
+  ballEl.addEventListener('click', () => { dir = Math.random() < 0.5 ? 1 : -1; kick(1.3); state = 'soccer'; stateUntil = performance.now() + 12000; say('好球！⚽') })
   document.getElementById('close').addEventListener('click', () => window.pet && window.pet.quit())
   document.getElementById('reset').addEventListener('click', () => {
     applySkin(DEFAULT_SKIN); try { localStorage.removeItem('petSkin') } catch {}
