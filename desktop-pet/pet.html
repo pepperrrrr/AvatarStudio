@@ -8,13 +8,13 @@
   #stage {
     position: relative;
     width: 230px;
-    height: 260px;
-    -webkit-app-region: drag; /* 整体可拖拽移动 */
+    height: 300px;
+    -webkit-app-region: drag;
   }
   #petWrap {
     position: absolute;
     left: 15px;
-    top: 62px;
+    top: 64px;
     width: 200px;
     height: 200px;
     animation: bob 3.2s ease-in-out infinite;
@@ -23,11 +23,11 @@
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-7px); }
   }
-  #petSvg { width: 100%; height: 100%; transition: transform .15s linear; }
+  #petSvg { width: 100%; height: 100%; transition: transform .15s linear; overflow: visible; }
   #shadow {
     position: absolute;
     left: 55px;
-    bottom: 4px;
+    bottom: 36px;
     width: 120px;
     height: 18px;
     border-radius: 50%;
@@ -38,21 +38,19 @@
     0%, 100% { transform: scaleX(1); opacity: .9; }
     50% { transform: scaleX(.86); opacity: .6; }
   }
-  /* 脸部点击热区：不参与拖拽，负责互动 */
   #faceHit {
     position: absolute;
     left: 75px;
-    top: 122px;
+    top: 124px;
     width: 80px;
     height: 80px;
     border-radius: 50%;
     -webkit-app-region: no-drag;
     cursor: pointer;
   }
-  #close {
+  .sideBtn {
     position: absolute;
     right: 2px;
-    top: 40px;
     width: 22px;
     height: 22px;
     border: none;
@@ -68,20 +66,24 @@
     -webkit-app-region: no-drag;
     padding: 0;
   }
-  #stage:hover #close { opacity: 1; }
+  #stage:hover .sideBtn { opacity: 1; }
+  #close { top: 42px; }
+  #gen { top: 70px; }
+  #reset { top: 98px; }
   .bubble {
     position: absolute;
     top: 2px;
     left: 50%;
     transform: translateX(-50%);
-    max-width: 210px;
+    max-width: 214px;
     background: #1f2430;
     color: #e8ecf4;
     border: 1px solid #343c4e;
     border-radius: 10px;
     padding: 6px 10px;
     font: 11px/1.5 "SF Mono", Menlo, monospace;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
     opacity: 0;
     transition: opacity .25s;
     pointer-events: none;
@@ -98,6 +100,38 @@
   }
   .bubble.show { opacity: 1; }
   .bubble .prompt { color: #d97757; font-weight: 700; }
+  #genBar {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 4px;
+    display: none;
+    gap: 6px;
+    -webkit-app-region: no-drag;
+  }
+  #genBar.open { display: flex; }
+  #genInput {
+    flex: 1;
+    min-width: 0;
+    background: #1f2430;
+    border: 1px solid #343c4e;
+    border-radius: 8px;
+    color: #e8ecf4;
+    font: 11px/1.4 "PingFang SC", sans-serif;
+    padding: 6px 8px;
+    outline: none;
+  }
+  #genInput:focus { border-color: #d97757; }
+  #genGo {
+    border: none;
+    border-radius: 8px;
+    background: #d97757;
+    color: #fff;
+    font-size: 12px;
+    padding: 0 10px;
+    cursor: pointer;
+  }
+  #genGo:disabled { opacity: .5; }
   .fx {
     position: absolute;
     font-size: 15px;
@@ -116,122 +150,355 @@
   <div id="bubble" class="bubble"></div>
   <div id="shadow"></div>
   <div id="petWrap">
-    <svg id="petSvg" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="bodyGrad" cx="0.5" cy="0.42" r="0.75">
-          <stop offset="0%" stop-color="#e78d64" />
-          <stop offset="100%" stop-color="#d97757" />
-        </radialGradient>
-        <path id="petal" d="M -13 -20 C -17 -45 -10 -68 0 -76 C 10 -68 17 -45 13 -20 C 8 -14 -8 -14 -13 -20 Z" />
-      </defs>
-      <g id="body">
-        <g id="petals" fill="url(#bodyGrad)"></g>
-        <circle r="36" fill="url(#bodyGrad)" />
-        <!-- 脸 -->
-        <g id="face" transform="translate(0 20)">
-          <ellipse cx="-17" cy="8" rx="8" ry="4.5" fill="#c05a3e" opacity="0.55" />
-          <ellipse cx="17" cy="8" rx="8" ry="4.5" fill="#c05a3e" opacity="0.55" />
-          <g id="eyeL" transform="translate(-13 -4)">
-            <g class="lid">
-              <ellipse rx="6.5" ry="9" fill="#40241a" />
-              <circle cx="-2" cy="-3.5" r="2.4" fill="#fff" />
-              <circle cx="2.6" cy="2.5" r="1.2" fill="#fff" opacity="0.85" />
-            </g>
-          </g>
-          <g id="eyeR" transform="translate(13 -4)">
-            <g class="lid">
-              <ellipse rx="6.5" ry="9" fill="#40241a" />
-              <circle cx="-2" cy="-3.5" r="2.4" fill="#fff" />
-              <circle cx="2.6" cy="2.5" r="1.2" fill="#fff" opacity="0.85" />
-            </g>
-          </g>
-          <g id="mouths">
-            <path id="m-normal" d="M -5 9 Q 0 13 5 9" stroke="#40241a" stroke-width="2" fill="none" stroke-linecap="round" />
-            <path id="m-happy" d="M -7 8 Q 0 17 7 8 Z" fill="#40241a" visibility="hidden" />
-            <ellipse id="m-wow" cx="0" cy="11" rx="4" ry="5" fill="#40241a" visibility="hidden" />
-            <path id="m-sleepy" d="M -5 11 L 5 11" stroke="#40241a" stroke-width="2" fill="none" stroke-linecap="round" visibility="hidden" />
-          </g>
-          <text id="zzz" x="30" y="-18" font-size="13" fill="#8f5b46" visibility="hidden">z Z</text>
-        </g>
-      </g>
-    </svg>
+    <svg id="petSvg" viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
   </div>
   <div id="faceHit" title="点我一下"></div>
-  <button id="close" title="退出桌宠">✕</button>
+  <button id="close" class="sideBtn" title="退出桌宠">✕</button>
+  <button id="gen" class="sideBtn" title="用一句话生成新桌宠">✎</button>
+  <button id="reset" class="sideBtn" title="换回小 Claude">↺</button>
+  <div id="genBar">
+    <input id="genInput" placeholder="如：戴帽子的蓝色小猫…回车生成" />
+    <button id="genGo">➤</button>
+  </div>
 </div>
 <script>
-  // 生成八瓣星芒身体（Anthropic 星芒风格）
-  const petals = document.getElementById('petals')
-  for (let i = 0; i < 8; i++) {
-    const u = document.createElementNS('http://www.w3.org/2000/svg', 'use')
-    u.setAttribute('href', '#petal')
-    u.setAttribute('transform', `rotate(${i * 45})`)
-    petals.appendChild(u)
+  // ============ 官方 Claude 星芒（simple-icons 原版路径 + 官方色 #D97757）============
+  const SPARK_PATH = 'm4.7144 15.9555 4.7174-2.6471.079-.2307-.079-.1275h-.2307l-.7893-.0486-2.6956-.0729-2.3375-.0971-2.2646-.1214-.5707-.1215-.5343-.7042.0546-.3522.4797-.3218.686.0608 1.5179.1032 2.2767.1578 1.6514.0972 2.4468.255h.3886l.0546-.1579-.1336-.0971-.1032-.0972L6.973 9.8356l-2.55-1.6879-1.3356-.9714-.7225-.4918-.3643-.4614-.1578-1.0078.6557-.7225.8803.0607.2246.0607.8925.686 1.9064 1.4754 2.4893 1.8336.3643.3035.1457-.1032.0182-.0728-.164-.2733-1.3539-2.4467-1.445-2.4893-.6435-1.032-.17-.6194c-.0607-.255-.1032-.4674-.1032-.7285L6.287.1335 6.6997 0l.9957.1336.419.3642.6192 1.4147 1.0018 2.2282 1.5543 3.0296.4553.8985.2429.8318.091.255h.1579v-.1457l.1275-1.706.2368-2.0947.2307-2.6957.0789-.7589.3764-.9107.7468-.4918.5828.2793.4797.686-.0668.4433-.2853 1.8517-.5586 2.9021-.3643 1.9429h.2125l.2429-.2429.9835-1.3053 1.6514-2.0643.7286-.8196.85-.9046.5464-.4311h1.0321l.759 1.1293-.34 1.1657-1.0625 1.3478-.8804 1.1414-1.2628 1.7-.7893 1.36.0729.1093.1882-.0183 2.8535-.607 1.5421-.2794 1.8396-.3157.8318.3886.091.3946-.3278.8075-1.967.4857-2.3072.4614-3.4364.8136-.0425.0304.0486.0607 1.5482.1457.6618.0364h1.621l3.0175.2247.7892.522.4736.6376-.079.4857-1.2142.6193-1.6393-.3886-3.825-.9107-1.3113-.3279h-.1822v.1093l1.0929 1.0686 2.0035 1.8092 2.5075 2.3314.1275.5768-.3218.4554-.34-.0486-2.2039-1.6575-.85-.7468-1.9246-1.621h-.1275v.17l.4432.6496 2.3436 3.5214.1214 1.0807-.17.3521-.6071.2125-.6679-.1214-1.3721-1.9246L14.38 17.959l-1.1414-1.9428-.1397.079-.674 7.2552-.3156.3703-.7286.2793-.6071-.4614-.3218-.7468.3218-1.4753.3886-1.9246.3157-1.53.2853-1.9004.17-.6314-.0121-.0425-.1397.0182-1.4328 1.9672-2.1796 2.9446-1.7243 1.8456-.4128.164-.7164-.3704.0667-.6618.4008-.5889 2.386-3.0357 1.4389-1.882.929-1.0868-.0062-.1579h-.0546l-6.3385 4.1164-1.1293.1457-.4857-.4554.0608-.7467.2307-.2429 1.9064-1.3114Z'
+  const DEFAULT_SKIN = `<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(-96 -96) scale(8)"><path d="${SPARK_PATH}" fill="#d97757"/></g>
+    <circle r="34" fill="#d97757"/>
+    <g id="face" transform="translate(0 4)">
+      <ellipse cx="-18" cy="9" rx="8" ry="4.5" fill="#b85c3d" opacity="0.6"/>
+      <ellipse cx="18" cy="9" rx="8" ry="4.5" fill="#b85c3d" opacity="0.6"/>
+      <g id="eyeL" transform="translate(-13 -4)"><g class="lid">
+        <ellipse rx="6.5" ry="9" fill="#40241a"/>
+        <circle cx="-2" cy="-3.5" r="2.4" fill="#fff"/>
+        <circle cx="2.6" cy="2.5" r="1.2" fill="#fff" opacity="0.85"/>
+      </g></g>
+      <g id="eyeR" transform="translate(13 -4)"><g class="lid">
+        <ellipse rx="6.5" ry="9" fill="#40241a"/>
+        <circle cx="-2" cy="-3.5" r="2.4" fill="#fff"/>
+        <circle cx="2.6" cy="2.5" r="1.2" fill="#fff" opacity="0.85"/>
+      </g></g>
+      <g id="mouths">
+        <path id="m-normal" d="M -5 9 Q 0 13 5 9" stroke="#40241a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path id="m-happy" d="M -7 8 Q 0 17 7 8 Z" fill="#40241a" visibility="hidden"/>
+        <ellipse id="m-wow" cx="0" cy="11" rx="4" ry="5" fill="#40241a" visibility="hidden"/>
+        <path id="m-sleepy" d="M -5 11 L 5 11" stroke="#40241a" stroke-width="2" fill="none" stroke-linecap="round" visibility="hidden"/>
+      </g>
+      <text id="zzz" x="30" y="-20" font-size="13" fill="#8f4f35" visibility="hidden">z Z</text>
+    </g>
+  </svg>`
+
+  // ============ 程序化桌宠生成器：一句话 → 带动画骨架的 SVG（离线/免费/即时）============
+  function shade(hex, f) {
+    const n = parseInt(hex.slice(1), 16)
+    const c = (v) => Math.max(0, Math.min(255, Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f))))
+    return '#' + [c((n >> 16) & 255), c((n >> 8) & 255), c(n & 255)].map((x) => x.toString(16).padStart(2, '0')).join('')
+  }
+  function starPath(cx, cy, rO, rI, n) {
+    let d = ''
+    for (let i = 0; i < n * 2; i++) {
+      const r = i % 2 ? rI : rO
+      const a = -Math.PI / 2 + (i * Math.PI) / n
+      d += (i ? 'L' : 'M') + (cx + r * Math.cos(a)).toFixed(1) + ' ' + (cy + r * Math.sin(a)).toFixed(1) + ' '
+    }
+    return d + 'Z'
   }
 
+  const PALS = [
+    [['橙', '橘', 'orange'], '#d97757'],
+    [['红', '赤', 'red'], '#e0574f'],
+    [['粉', '桃', 'pink', 'rose'], '#eb8fb4'],
+    [['黄', '金', 'yellow', 'gold'], '#f0c250'],
+    [['绿', '青绿', 'green'], '#5cb96a'],
+    [['蓝', 'blue'], '#5a8fe0'],
+    [['青', '蓝绿', 'teal', 'cyan'], '#3fbcbf'],
+    [['紫', 'purple', 'violet'], '#9b7ce0'],
+    [['棕', '咖啡', 'brown'], '#a9744f'],
+    [['黑', 'black'], '#4a4a57'],
+    [['白', 'white'], '#e2e6f0'],
+    [['灰', 'gray', 'grey'], '#9aa0ad'],
+  ]
+
+  function buildSkin(prompt) {
+    const p = (prompt || '').toLowerCase()
+    const has = (...ks) => ks.some((k) => p.includes(k))
+
+    // —— 主色 ——
+    let base = '#d97757'
+    const rainbow = has('彩虹', 'rainbow', '七彩')
+    for (const [keys, hex] of PALS) if (keys.some((k) => p.includes(k))) { base = hex; break }
+    const dark = shade(base, -0.35)
+    const light = shade(base, 0.4)
+    const pink = '#ff9db0'
+
+    let defs = ''
+    let bodyFill = base
+    if (rainbow) {
+      defs += `<linearGradient id="rb" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ff6b6b"/><stop offset="30%" stop-color="#ffd166"/>
+        <stop offset="60%" stop-color="#63d471"/><stop offset="100%" stop-color="#5a8fe0"/></linearGradient>`
+      bodyFill = 'url(#rb)'
+    }
+
+    // —— 种类判定（优先级从上到下）——
+    const KINDS = ['panda','cat','fox','rabbit','bear','dog','mouse','penguin','frog','chick','ghost','robot','dino','slime']
+    let kind = 'blob'
+    if (has('熊猫', 'panda')) kind = 'panda'
+    else if (has('猫', 'cat', 'kitty', '喵')) kind = 'cat'
+    else if (has('狐', 'fox')) kind = 'fox'
+    else if (has('兔', 'bunny', 'rabbit')) kind = 'rabbit'
+    else if (has('熊', 'bear')) kind = 'bear'
+    else if (has('狗', '犬', 'dog', 'puppy', '汪')) kind = 'dog'
+    else if (has('鼠', 'mouse')) kind = 'mouse'
+    else if (has('企鹅', 'penguin')) kind = 'penguin'
+    else if (has('蛙', 'frog')) kind = 'frog'
+    else if (has('鸡', '鸟', '鸭', 'chick', 'bird', 'duck')) kind = 'chick'
+    else if (has('幽灵', '鬼', 'ghost', '灵')) kind = 'ghost'
+    else if (has('机器人', 'robot', '机械')) kind = 'robot'
+    else if (has('龙', '恐龙', 'dragon', 'dino')) kind = 'dino'
+    else if (has('史莱姆', 'slime', '黏', '粘')) kind = 'slime'
+    const starBody = (has('星', 'star') && kind === 'blob')
+
+    // —— body / back(耳朵、尾巴等，画在身体后) / top(画在身体上、脸下) ——
+    let back = '', body = '', top = ''
+
+    if (kind === 'ghost') {
+      body = `<path d="M -34 -2 C -34 -34 34 -34 34 -2 L 34 30 Q 27 22 20 30 Q 13 38 6 30 Q 0 23 -6 30 Q -13 38 -20 30 Q -27 22 -34 30 Z"
+        fill="${bodyFill}" fill-opacity="0.92" stroke="${dark}" stroke-width="1.5"/>`
+    } else if (kind === 'penguin') {
+      body = `<ellipse cx="0" cy="4" rx="34" ry="38" fill="${bodyFill}" stroke="${dark}" stroke-width="1.5"/>`
+      top += `<ellipse cx="0" cy="12" rx="21" ry="26" fill="${shade(base, 0.55)}"/>
+        <path d="M -6 22 L 0 30 L 6 22 Z" fill="#f0a92e"/>`
+    } else if (kind === 'robot') {
+      body = `<line x1="0" y1="-34" x2="0" y2="-46" stroke="${dark}" stroke-width="2"/><circle cx="0" cy="-48" r="4" fill="${light}"/>
+        <rect x="-34" y="-30" width="68" height="68" rx="16" fill="${bodyFill}" stroke="${dark}" stroke-width="1.5"/>
+        <rect x="-40" y="-6" width="8" height="20" rx="4" fill="${dark}"/><rect x="32" y="-6" width="8" height="20" rx="4" fill="${dark}"/>`
+    } else if (starBody) {
+      body = `<path d="${starPath(0, 4, 44, 20, 5)}" fill="${bodyFill}" stroke="${dark}" stroke-width="1.5" stroke-linejoin="round"/>`
+    } else if (kind === 'slime') {
+      body = `<path d="M -36 30 C -40 -6 -22 -30 0 -30 C 22 -30 40 -6 36 30 Z" fill="${bodyFill}" fill-opacity="0.9" stroke="${dark}" stroke-width="1.5"/>
+        <ellipse cx="-14" cy="-14" rx="7" ry="4" fill="#fff" opacity="0.5"/>`
+    } else {
+      // 圆身体（猫/狗/熊/兔/狐/鼠/熊猫/蛙/鸡/龙/blob 通用）
+      body = `<circle cx="0" cy="4" r="36" fill="${bodyFill}" stroke="${dark}" stroke-width="1.5"/>`
+    }
+
+    // 耳朵 / 头部特征
+    if (kind === 'cat' || kind === 'fox') {
+      const tip = kind === 'fox' ? '#fff' : shade(base, 0.15)
+      top += `<path d="M -30 -18 L -37 -46 L -12 -26 Z" fill="${base}" stroke="${dark}" stroke-width="1.5"/>
+        <path d="M -28 -22 L -32 -38 L -18 -26 Z" fill="${pink}"/>
+        <path d="M 30 -18 L 37 -46 L 12 -26 Z" fill="${base}" stroke="${dark}" stroke-width="1.5"/>
+        <path d="M 28 -22 L 32 -38 L 18 -26 Z" fill="${pink}"/>`
+      if (kind === 'fox') top += `<path d="M -30 -18 L -35 -34 L -22 -25 Z" fill="${tip}" opacity="0.9"/>
+        <path d="M 30 -18 L 35 -34 L 22 -25 Z" fill="${tip}" opacity="0.9"/>`
+    } else if (kind === 'bear' || kind === 'panda' || kind === 'mouse') {
+      const er = kind === 'mouse' ? 15 : 12
+      const ec = kind === 'panda' ? '#3a3a44' : base
+      top += `<circle cx="-26" cy="-28" r="${er}" fill="${ec}" stroke="${dark}" stroke-width="1.5"/>
+        <circle cx="26" cy="-28" r="${er}" fill="${ec}" stroke="${dark}" stroke-width="1.5"/>
+        <circle cx="-26" cy="-28" r="${er - 5}" fill="${pink}" opacity="0.6"/>
+        <circle cx="26" cy="-28" r="${er - 5}" fill="${pink}" opacity="0.6"/>`
+      if (kind === 'panda') top += `<ellipse cx="-13" cy="-1" rx="10" ry="12" fill="#3a3a44"/>
+        <ellipse cx="13" cy="-1" rx="10" ry="12" fill="#3a3a44"/>`
+    } else if (kind === 'rabbit') {
+      top += `<ellipse cx="-15" cy="-42" rx="8" ry="24" fill="${base}" stroke="${dark}" stroke-width="1.5" transform="rotate(-10 -15 -42)"/>
+        <ellipse cx="15" cy="-42" rx="8" ry="24" fill="${base}" stroke="${dark}" stroke-width="1.5" transform="rotate(10 15 -42)"/>
+        <ellipse cx="-15" cy="-44" rx="4" ry="16" fill="${pink}" transform="rotate(-10 -15 -44)"/>
+        <ellipse cx="15" cy="-44" rx="4" ry="16" fill="${pink}" transform="rotate(10 15 -44)"/>`
+    } else if (kind === 'dog') {
+      top += `<ellipse cx="-32" cy="-14" rx="11" ry="20" fill="${dark}" transform="rotate(18 -32 -14)"/>
+        <ellipse cx="32" cy="-14" rx="11" ry="20" fill="${dark}" transform="rotate(-18 32 -14)"/>`
+    } else if (kind === 'chick') {
+      top += `<path d="M -6 20 L 0 28 L 6 20 Z" fill="#f0a92e"/>
+        <path d="M -3 -34 Q 0 -46 4 -34 Z" fill="${shade(base, -0.15)}"/>`
+    } else if (kind === 'frog') {
+      top += `<circle cx="-16" cy="-30" r="12" fill="${base}" stroke="${dark}" stroke-width="1.5"/>
+        <circle cx="16" cy="-30" r="12" fill="${base}" stroke="${dark}" stroke-width="1.5"/>
+        <circle cx="-16" cy="-30" r="6" fill="#fff"/><circle cx="16" cy="-30" r="6" fill="#fff"/>
+        <circle cx="-16" cy="-30" r="3" fill="#2e2a33"/><circle cx="16" cy="-30" r="3" fill="#2e2a33"/>`
+    } else if (kind === 'dino') {
+      top += `<path d="M -30 -22 L -24 -34 L -16 -24 L -8 -36 L 0 -24 L 8 -36 L 16 -24 L 24 -34 L 30 -22 Z" fill="${shade(base, -0.2)}"/>`
+    }
+
+    // —— 脸（动画骨架，所有皮肤共用）——
+    const sleepy = base
+    const face = `<g id="face" transform="translate(0 4)">
+      <ellipse cx="-19" cy="10" rx="7.5" ry="4" fill="${pink}" opacity="0.6"/>
+      <ellipse cx="19" cy="10" rx="7.5" ry="4" fill="${pink}" opacity="0.6"/>
+      <g id="eyeL" transform="translate(-13 -3)"><g class="lid">
+        <ellipse rx="7" ry="9.5" fill="#fff" stroke="${dark}" stroke-width="0.8"/>
+        <circle cx="0" cy="0.5" r="4.6" fill="#2e2a33"/>
+        <circle cx="-1.7" cy="-2.2" r="1.9" fill="#fff"/>
+        <circle cx="1.5" cy="2.4" r="0.9" fill="#fff" opacity="0.8"/>
+      </g></g>
+      <g id="eyeR" transform="translate(13 -3)"><g class="lid">
+        <ellipse rx="7" ry="9.5" fill="#fff" stroke="${dark}" stroke-width="0.8"/>
+        <circle cx="0" cy="0.5" r="4.6" fill="#2e2a33"/>
+        <circle cx="-1.7" cy="-2.2" r="1.9" fill="#fff"/>
+        <circle cx="1.5" cy="2.4" r="0.9" fill="#fff" opacity="0.8"/>
+      </g></g>
+      <g id="mouths">
+        <path id="m-normal" d="M -5 10 Q 0 14 5 10" stroke="#2e2a33" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path id="m-happy" d="M -7 9 Q 0 18 7 9 Z" fill="#2e2a33" visibility="hidden"/>
+        <ellipse id="m-wow" cx="0" cy="12" rx="4" ry="5" fill="#2e2a33" visibility="hidden"/>
+        <path id="m-sleepy" d="M -5 12 L 5 12" stroke="#2e2a33" stroke-width="2" fill="none" stroke-linecap="round" visibility="hidden"/>
+      </g>
+      <text id="zzz" x="30" y="-20" font-size="13" fill="${dark}" visibility="hidden">z Z</text>
+    </g>`
+
+    // —— 配饰（画在最上层）——
+    let acc = ''
+    if (has('眼镜', 'glasses', '墨镜', 'sunglasses')) {
+      const gf = has('墨镜', 'sunglasses') ? '#2e2a33' : 'rgba(150,190,255,0.18)'
+      acc += `<g transform="translate(0 1)">
+        <circle cx="-13" cy="0" r="10" fill="${gf}" stroke="#2e2a33" stroke-width="2"/>
+        <circle cx="13" cy="0" r="10" fill="${gf}" stroke="#2e2a33" stroke-width="2"/>
+        <path d="M -3 0 Q 0 -3 3 0" stroke="#2e2a33" stroke-width="2" fill="none"/></g>`
+    }
+    if (has('皇冠', '王冠', 'crown')) {
+      acc += `<path d="M -20 -32 L -20 -50 L -10 -40 L 0 -54 L 10 -40 L 20 -50 L 20 -32 Z"
+        fill="#f5c542" stroke="#c99a1e" stroke-width="1.5"/>
+        <circle cx="0" cy="-46" r="2.5" fill="#e0574f"/>`
+    } else if (has('帽子', '礼帽', 'hat', 'cap')) {
+      acc += `<path d="M -26 -30 Q 0 -34 26 -30 L 22 -32 Z" fill="#3a4a8f"/>
+        <rect x="-16" y="-52" width="32" height="24" rx="4" fill="#3a4a8f" stroke="#28356b" stroke-width="1.5"/>
+        <rect x="-18" y="-32" width="36" height="6" rx="3" fill="#28356b"/>`
+    }
+    if (has('蝴蝶结', 'bow', '领结')) {
+      acc += `<g transform="translate(22 -26)">
+        <path d="M 0 0 L -13 -7 L -13 8 Z" fill="#e0574f"/><path d="M 0 0 L 13 -7 L 13 8 Z" fill="#e0574f"/>
+        <circle r="3.5" fill="#b5423b"/></g>`
+    }
+    if (has('围巾', 'scarf', '领巾')) {
+      acc += `<path d="M -22 30 Q 0 40 22 30 L 20 38 Q 0 46 -20 38 Z" fill="#e0574f" stroke="#b5423b" stroke-width="1"/>
+        <path d="M 12 36 L 18 52 L 8 50 Z" fill="#c9463e"/>`
+    }
+    if (has('耳机', 'headphone', 'headset')) {
+      acc += `<path d="M -34 -2 A 34 34 0 0 1 34 -2" fill="none" stroke="#2e2a33" stroke-width="4"/>
+        <rect x="-42" y="-4" width="12" height="20" rx="5" fill="#2e2a33"/><rect x="30" y="-4" width="12" height="20" rx="5" fill="#2e2a33"/>`
+    }
+    if (has('花', 'flower')) {
+      acc += `<g transform="translate(-24 -30)">
+        ${[0,1,2,3,4].map(i=>`<circle cx="${(8*Math.cos(i*1.2566)).toFixed(1)}" cy="${(8*Math.sin(i*1.2566)).toFixed(1)}" r="5" fill="#ff8fb0"/>`).join('')}
+        <circle r="4" fill="#ffd166"/></g>`
+    }
+    if (has('星', 'star') && !starBody) {
+      acc += `<path d="${starPath(0, 20, 8, 3.4, 5)}" fill="#ffd166" stroke="${dark}" stroke-width="0.8"/>`
+    }
+    if (has('爱心', '心', 'heart')) {
+      acc += `<path d="M 0 26 C -8 16 -16 20 -12 27 C -9 31 0 36 0 36 C 0 36 9 31 12 27 C 16 20 8 16 0 26 Z" fill="#ff6b8a"/>`
+    }
+
+    const svg = `<svg viewBox="-100 -100 200 200" xmlns="http://www.w3.org/2000/svg">
+      ${defs ? '<defs>' + defs + '</defs>' : ''}
+      ${back}${body}${top}${face}${acc}
+    </svg>`
+    return svg
+  }
+
+  // ============ 皮肤系统 ============
   const svg = document.getElementById('petSvg')
-  const lids = document.querySelectorAll('.lid')
-  const eyeL = document.getElementById('eyeL')
-  const eyeR = document.getElementById('eyeR')
   const bubble = document.getElementById('bubble')
-  const zzz = document.getElementById('zzz')
+  let lids = [], eyeL = null, eyeR = null, zzz = null
+  let baseL = [-13, -4], baseR = [13, -4]
 
-  // —— 视线追踪：主进程喂全局光标位置 ——
-  let tx = 0, ty = 0, gx = 0, gy = 0
-  if (window.pet) {
-    window.pet.onCursor(({ dx, dy }) => {
-      tx = Math.max(-1, Math.min(1, dx / 300))
-      ty = Math.max(-1, Math.min(1, dy / 300))
-    })
+  function parseBase(el, fb) {
+    const t = el && el.getAttribute('transform')
+    const m = t && t.match(/translate\(\s*(-?[\d.]+)[ ,]+(-?[\d.]+)/)
+    return m ? [parseFloat(m[1]), parseFloat(m[2])] : fb
+  }
+  function applySkin(svgText, persist = true) {
+    if (/<script|<foreignObject|javascript:|\son\w+=/i.test(svgText)) return false
+    const doc = new DOMParser().parseFromString(svgText, 'image/svg+xml')
+    const root = doc.documentElement
+    if (root.nodeName !== 'svg' || doc.querySelector('parsererror')) return false
+    if (!doc.getElementById('eyeL') || !doc.getElementById('mouths')) return false
+    svg.setAttribute('viewBox', root.getAttribute('viewBox') || '-100 -100 200 200')
+    svg.innerHTML = root.innerHTML
+    lids = [...svg.querySelectorAll('.lid')]
+    eyeL = svg.querySelector('#eyeL'); eyeR = svg.querySelector('#eyeR'); zzz = svg.querySelector('#zzz')
+    baseL = parseBase(eyeL, [-13, -4]); baseR = parseBase(eyeR, [13, -4])
+    if (persist) { try { localStorage.setItem('petSkin', svgText) } catch {} }
+    setMood(mood)
+    return true
   }
 
-  // —— 眨眼 ——
+  // —— 视线追踪 ——
+  let tx = 0, ty = 0, gx = 0, gy = 0
+  if (window.pet) window.pet.onCursor(({ dx, dy }) => {
+    tx = Math.max(-1, Math.min(1, dx / 300)); ty = Math.max(-1, Math.min(1, dy / 300))
+  })
+
+  // —— 眨眼 / 心情 ——
   let blink = 0, blinkStart = -1e9, nextBlink = 1500
-  // —— 心情 ——
   const MOODS = ['normal', 'happy', 'wow', 'sleepy']
   let mood = 0
-
+  function setMood(i) {
+    mood = ((i % MOODS.length) + MOODS.length) % MOODS.length
+    const id = MOODS[mood]
+    for (const m of MOODS) { const el = svg.querySelector('#m-' + m); if (el) el.setAttribute('visibility', m === id ? 'visible' : 'hidden') }
+    if (zzz) zzz.setAttribute('visibility', id === 'sleepy' ? 'visible' : 'hidden')
+  }
   function loop(now) {
     requestAnimationFrame(loop)
-    gx += (tx - gx) * 0.12
-    gy += (ty - gy) * 0.12
+    gx += (tx - gx) * 0.12; gy += (ty - gy) * 0.12
     if (now >= nextBlink) { blinkStart = now; nextBlink = now + 2200 + Math.random() * 3300 }
     const ph = (now - blinkStart) / 130
     blink = ph >= 0 && ph <= 1 ? Math.sin(Math.PI * ph) : 0
-    const sleepy = MOODS[mood] === 'sleepy'
-    const openY = sleepy ? 0.22 : Math.max(0.06, 1 - blink)
+    const openY = MOODS[mood] === 'sleepy' ? 0.22 : Math.max(0.06, 1 - blink)
     lids.forEach((l) => { l.style.transform = `scale(1, ${openY})` })
     const ex = gx * 4, ey = gy * 3
-    eyeL.setAttribute('transform', `translate(${-13 + ex} ${-4 + ey})`)
-    eyeR.setAttribute('transform', `translate(${13 + ex} ${-4 + ey})`)
+    if (eyeL) eyeL.setAttribute('transform', `translate(${baseL[0] + ex} ${baseL[1] + ey})`)
+    if (eyeR) eyeR.setAttribute('transform', `translate(${baseR[0] + ex} ${baseR[1] + ey})`)
     svg.style.transform = `rotate(${gx * 5}deg)`
   }
-  requestAnimationFrame(loop)
 
-  function setMood(i) {
-    mood = i % MOODS.length
-    const id = MOODS[mood]
-    for (const m of ['normal', 'happy', 'wow', 'sleepy']) {
-      document.getElementById('m-' + m).setAttribute('visibility', m === id ? 'visible' : 'hidden')
-    }
-    zzz.setAttribute('visibility', id === 'sleepy' ? 'visible' : 'hidden')
-  }
-
-  // —— 点击互动：换心情 + 冒爱心 ——
-  document.getElementById('faceHit').addEventListener('click', (e) => {
+  // —— 点击互动 ——
+  document.getElementById('faceHit').addEventListener('click', () => {
     setMood(mood + 1)
     const fx = document.createElement('span')
     fx.className = 'fx'
     fx.textContent = Math.random() < 0.5 ? '♥' : '✦'
     fx.style.left = 95 + (Math.random() * 40 - 20) + 'px'
-    fx.style.top = '110px'
+    fx.style.top = '112px'
     fx.style.color = Math.random() < 0.5 ? '#ff6b8a' : '#d97757'
     document.getElementById('stage').appendChild(fx)
     setTimeout(() => fx.remove(), 950)
     say(mood === 1 ? '嘿嘿 (＾▽＾)' : mood === 2 ? '哇哦！' : mood === 3 ? '休息一下… z Z' : '继续干活！')
   })
-
   document.getElementById('close').addEventListener('click', () => window.pet && window.pet.quit())
+  document.getElementById('reset').addEventListener('click', () => {
+    applySkin(DEFAULT_SKIN); try { localStorage.removeItem('petSkin') } catch {}
+    say('<span class="prompt">❯</span> 我回来啦 ✦')
+  })
+
+  // —— prompt 生成 ——
+  const genBar = document.getElementById('genBar')
+  const genInput = document.getElementById('genInput')
+  const genGo = document.getElementById('genGo')
+  document.getElementById('gen').addEventListener('click', () => {
+    genBar.classList.toggle('open')
+    if (genBar.classList.contains('open')) genInput.focus()
+  })
+  function doGenerate() {
+    const prompt = genInput.value.trim()
+    if (!prompt) return say('先描述一下想要的桌宠嘛~')
+    say('🎨 正在拼装「' + prompt + '」…')
+    setTimeout(() => {
+      try {
+        const skin = buildSkin(prompt)
+        if (applySkin(skin)) {
+          say('✦ 变身完成！不喜欢点 ↺ 换回我')
+          genBar.classList.remove('open'); genInput.value = ''
+        } else { say('这个描述没画好，换个说法试试？') }
+      } catch (e) { say('出错了：' + String(e).slice(0, 100)) }
+    }, 350)
+  }
+  genGo.addEventListener('click', doGenerate)
+  genInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doGenerate() })
 
   // —— 终端风气泡 ——
   const LINES = [
@@ -240,22 +507,21 @@
     '<span class="prompt">❯</span> 修好了一个 bug',
     '<span class="prompt">❯</span> git push origin main',
     '<span class="prompt">❯</span> 编译通过 · 0 errors',
-    'vibe coding 中…',
-    '有新需求吗？',
-    '记得喝水休息哦 ☕',
-    '今天也要加油呀 ✦',
+    'vibe coding 中…', '有新需求吗？', '记得喝水休息哦 ☕', '今天也要加油呀 ✦',
+    '点 ✎ 可以让我变身哦', '试试「戴皇冠的紫色小猫」',
   ]
   let bubbleTimer = 0
   function say(html) {
-    bubble.innerHTML = html
-    bubble.classList.add('show')
-    clearTimeout(bubbleTimer)
-    bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 4200)
+    bubble.innerHTML = html; bubble.classList.add('show')
+    clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => bubble.classList.remove('show'), 4200)
   }
-  function chatter() {
-    say(LINES[Math.floor(Math.random() * LINES.length)])
-    setTimeout(chatter, 18000 + Math.random() * 17000)
-  }
+  function chatter() { say(LINES[Math.floor(Math.random() * LINES.length)]); setTimeout(chatter, 18000 + Math.random() * 17000) }
+
+  // —— 启动 ——
+  let saved = null
+  try { saved = localStorage.getItem('petSkin') } catch {}
+  if (!saved || !applySkin(saved, false)) applySkin(DEFAULT_SKIN, false)
+  requestAnimationFrame(loop)
   setTimeout(() => say('<span class="prompt">❯</span> 你好，我是小 Claude ✦'), 1200)
   setTimeout(chatter, 12000)
 </script>
