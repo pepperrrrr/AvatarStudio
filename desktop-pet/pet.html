@@ -163,47 +163,77 @@
   </div>
 </div>
 <script>
-  // ============ 官方吉祥物 Clawd —— 移植自 stevysmith/clawd-react (MIT) 的精确几何 ============
-  // 纯矩形、平顶身体、两侧 arm-nub、深色方眼、四条深色腿；颜色取自其 constants.ts
+  // ============ 官方吉祥物 Clawd —— clawd-react(MIT) 的结构 + 真·像素网格渲染 ============
+  // 结构/配色取自 clawd-react；此处用像素格逐格渲染 + 高光/阴影分层 + 阶梯边角，找回 8-bit 质感
   function buildClaudePet() {
-    const u = 8
-    const BODY = '#C27C5C', DARK = '#8B5A42', EYE = '#1a1a1a'
-    const R = (x, y, w, h, f) => `<rect x="${(x * u).toFixed(1)}" y="${(y * u).toFixed(1)}" width="${(w * u).toFixed(1)}" height="${(h * u).toFixed(1)}" fill="${f}"/>`
+    const C = 9 // 像素格（够大才有颗粒感）
+    const COLORS = {
+      H: '#D89474', // 高光（顶部/左上）
+      B: '#C27C5C', // 身体（clawd-react BODY）
+      S: '#AA6849', // 阴影（底部/右侧）
+      D: '#8B5A42', // 暗部/底座/腿（clawd-react DARK）
+    }
+    const px = (c, r, fill) =>
+      `<rect x="${(c * C).toFixed(1)}" y="${(r * C).toFixed(1)}" width="${(C + 0.6).toFixed(1)}" height="${(C + 0.6).toFixed(1)}" fill="${fill}"/>`
 
-    // 身体（12×7）+ 两侧手臂小突起（3.2u 高度处）
-    const body = R(1, 0, 12, 7, BODY)
-    const arms = R(-0.5, 3.2, 1.5, 1.8, BODY) + R(13, 3.2, 1.5, 1.8, BODY)
+    // 身体像素图：平顶+阶梯圆角，H 高光顶、S 右下阴影、D 底座，两侧 N=arm-nub
+    // 眼睛留空（用可动骨架覆盖）。列 0..15
+    const GRID = [
+      '...HHHHHHHHHH...',
+      '..HBBBBBBBBBBS..',
+      '.HBBBBBBBBBBBBS.',
+      '.BBBBBBBBBBBBBS.',
+      'NBBBBBBBBBBBBBBN',
+      'NBBBBBBBBBBBBBBN',
+      '.BBBBBBBBBBBBBS.',
+      '.SBBBBBBBBBBBSS.',
+      '.SSBBBBBBBBBSSS.',
+      '.DDDDDDDDDDDDDD.',
+    ]
+    let cells = ''
+    GRID.forEach((row, r) => {
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c]
+        if (ch === 'N') cells += px(c, r, COLORS.B)
+        else if (COLORS[ch]) cells += px(c, r, COLORS[ch])
+      }
+    })
 
-    // 四条腿（深色，x=2/3.8/9/10.8，可动 id leg0..3）
-    const legX = [2, 3.8, 9, 10.8]
+    // 四条腿（深色像素，x≈clawd-react 的 2/3.8/9/10.8 → 换算到本格宽；可动 id leg0..3）
+    const legCols = [2.5, 5, 10, 12.5]
     let legs = ''
-    legX.forEach((x, i) => { legs += `<g class="leg" id="leg${i}">${R(x, 7, 1.2, 2.5, DARK)}</g>` })
+    legCols.forEach((c, i) => {
+      legs += `<g class="leg" id="leg${i}">` + px(c, 10, COLORS.D) + px(c, 11, COLORS.D) +
+        `<rect x="${(c * C).toFixed(1)}" y="${(12 * C).toFixed(1)}" width="${(C + 0.6).toFixed(1)}" height="${(C * 0.5).toFixed(1)}" fill="#6f4632"/></g>`
+    })
 
-    // 眼睛：深色方块（原版 3.5u/9.5u 处，宽1u 高2u），包成眨眼/追踪骨架
-    const eye = (id, cx) =>
-      `<g id="${id}" transform="translate(${(cx * u).toFixed(1)} ${(2.5 * u).toFixed(1)})"><g class="lid">` +
-      `<rect x="${-0.5 * u}" y="${-1 * u}" width="${u}" height="${2 * u}" fill="${EYE}"/></g></g>`
-    const eyeL = eye('eyeL', 4)
-    const eyeR = eye('eyeR', 10)
+    // 眼睛：深色方块像素（2 格宽×3 格高），眨眼/追踪骨架
+    const eye = (id, cc) =>
+      `<g id="${id}" transform="translate(${(cc * C).toFixed(1)} ${(4 * C).toFixed(1)})"><g class="lid">` +
+      `<rect x="${-C}" y="${-1.5 * C}" width="${2 * C}" height="${3 * C}" fill="#1a1a1a"/>` +
+      `<rect x="${-0.6 * C}" y="${-1.1 * C}" width="${0.8 * C}" height="${0.8 * C}" fill="#3a3a3a"/></g></g>`
+    const eyeL = eye('eyeL', 4.5)
+    const eyeR = eye('eyeR', 10.5)
 
-    // 表情骨架（Clawd 本身无嘴，这里放一个很淡的小嘴支持换心情）
-    const mX = 6.4 * u, mY = 4.7 * u
+    // 表情骨架（淡淡小嘴，像素块）
+    const mX = 6.7 * C, mY = 6.2 * C
     const mouths =
-      `<g id="mouths" fill="${EYE}">` +
-      `<rect id="m-normal" x="${mX}" y="${mY}" width="${1.2 * u}" height="${0.3 * u}"/>` +
-      `<g id="m-happy" visibility="hidden"><rect x="${mX - 0.3 * u}" y="${mY - 0.1 * u}" width="${0.5 * u}" height="${0.4 * u}"/><rect x="${mX + u}" y="${mY - 0.1 * u}" width="${0.5 * u}" height="${0.4 * u}"/><rect x="${mX + 0.2 * u}" y="${mY + 0.35 * u}" width="${0.9 * u}" height="${0.4 * u}"/></g>` +
-      `<rect id="m-wow" x="${mX + 0.25 * u}" y="${mY - 0.15 * u}" width="${0.7 * u}" height="${0.8 * u}" visibility="hidden"/>` +
-      `<rect id="m-sleepy" x="${mX - 0.1 * u}" y="${mY + 0.15 * u}" width="${1.4 * u}" height="${0.3 * u}" visibility="hidden"/>` +
+      `<g id="mouths" fill="#6f4328">` +
+      `<rect id="m-normal" x="${mX}" y="${mY}" width="${1.6 * C}" height="${0.5 * C}"/>` +
+      `<g id="m-happy" visibility="hidden"><rect x="${mX - 0.4 * C}" y="${mY - 0.2 * C}" width="${0.6 * C}" height="${0.6 * C}"/><rect x="${mX + 1.4 * C}" y="${mY - 0.2 * C}" width="${0.6 * C}" height="${0.6 * C}"/><rect x="${mX + 0.2 * C}" y="${mY + 0.4 * C}" width="${1.2 * C}" height="${0.5 * C}"/></g>` +
+      `<rect id="m-wow" x="${mX + 0.4 * C}" y="${mY - 0.2 * C}" width="${0.9 * C}" height="${1.1 * C}" visibility="hidden"/>` +
+      `<rect id="m-sleepy" x="${mX - 0.1 * C}" y="${mY + 0.2 * C}" width="${1.8 * C}" height="${0.4 * C}" visibility="hidden"/>` +
       `</g>`
 
-    // thinking 火花（纯白十字，头顶）
+    // thinking 火花（纯白像素十字）
     const spark = (cx, cy, s) =>
       `<rect x="${cx - s / 2}" y="${cy - s * 1.5}" width="${s}" height="${s * 3}"/><rect x="${cx - s * 1.5}" y="${cy - s / 2}" width="${s * 3}" height="${s}"/>`
-    const sparks = `<g id="sparks" fill="#fff">${spark(4.5 * u, -1.6 * u, 4) + spark(9 * u, -2.2 * u, 3.2)}</g>`
-    const zzz = `<text id="zzz" x="${13.5 * u}" y="${1 * u}" font-size="15" fill="${BODY}" visibility="hidden">z</text>`
+    const sparks = `<g id="sparks" fill="#fff">${spark(5 * C, -1.4 * C, 4.5) + spark(10 * C, -2.2 * C, 3.6)}</g>`
+    const zzz = `<text id="zzz" x="${15 * C}" y="${1 * C}" font-size="16" fill="#C27C5C" visibility="hidden">z</text>`
 
-    return `<svg viewBox="-20 -28 152 122" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-      ${sparks}${body}${arms}${legs}${eyeL}${eyeR}${mouths}${zzz}
+    // viewBox：宽16格、含腿13格，留出头顶火花空间，居中
+    return `<svg viewBox="-18 -36 180 176" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+      ${sparks}${cells}${legs}${eyeL}${eyeR}${mouths}${zzz}
     </svg>`
   }
   const DEFAULT_SKIN = buildClaudePet()
