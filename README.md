@@ -18,7 +18,7 @@
 
 ## Claude Code 桌宠 · Clawd（desktop-pet/）
 
-还原 Claude Code 官方吉祥物 **Clawd**——8-bit 像素、纯矩形堆叠的四腿小生物：平顶方身体、两侧 arm-nub、深色方眼、四条深色腿、头顶 thinking 火花。几何与配色（`#C27C5C` / `#8B5A42`）**移植自 MIT 许可的 [stevysmith/clawd-react](https://github.com/stevysmith/clawd-react)**（详见 [desktop-pet/CREDITS.md](desktop-pet/CREDITS.md)），在其上加了眨眼/追踪骨架与自主行为。
+默认形象是一个**动漫角色**：紫色刘海 + 肩上两个小啾啾、**汽车速度表盘造型的眼睛**、毛茸茸白色小狗连体衣（带狗耳/爪套），支持**站立 / 坐下**两种姿势（自动切换，点一下也能坐/起）。另内置 Clawd 像素形象（`buildClaudePet()`，移植自 MIT 的 [stevysmith/clawd-react](https://github.com/stevysmith/clawd-react)，见 [desktop-pet/CREDITS.md](desktop-pet/CREDITS.md)）与一句话生成的自定义皮肤。
 
 **自主行为（无需操作，自己活动）**
 - 🚶 **走动**：随机四处走，四条腿交替摆动，转身面朝前进方向

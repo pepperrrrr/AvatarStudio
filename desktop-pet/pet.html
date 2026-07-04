@@ -163,6 +163,112 @@
   </div>
 </div>
 <script>
+  // ============ 动漫角色：紫发双啾啾 + 速度表盘眼 + 毛茸茸白狗连体衣（站/坐两姿）============
+  function buildAnimeGirl(pose) {
+    const sit = pose === 'sit'
+    const SKIN = '#ffe0cf', SKN2 = '#f4c9b1', SKLN = '#e3a284'
+    const HAIR = '#9d6fe0', HRD = '#7748bd', HRL = '#c7a7f5'
+    const WHT = '#f6f6fc', WSH = '#e0e0ee', WLN = '#c7c7db'
+    const PNK = '#ffc2d6', BLUSH = '#ff9db0'
+
+    // 毛茸茸滚边：一排叠圆
+    const fluff = (cx, cy, half, n, r, fill) => {
+      let s = ''
+      for (let i = 0; i < n; i++) { const x = cx - half + (2 * half) * (i / (n - 1)); s += `<circle cx="${x.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" fill="${fill}"/>` }
+      return s
+    }
+    // 速度表盘眼（中心 0,0，半径 R）
+    const gauge = (R) => {
+      const start = Math.PI * 0.75, span = Math.PI * 1.5
+      let ticks = ''
+      for (let i = 0; i <= 10; i++) {
+        const a = start + span * (i / 10), big = i % 5 === 0
+        const r1 = R * (big ? 0.58 : 0.7), r2 = R * 0.85
+        ticks += `<line x1="${(Math.cos(a) * r1).toFixed(1)}" y1="${(Math.sin(a) * r1).toFixed(1)}" x2="${(Math.cos(a) * r2).toFixed(1)}" y2="${(Math.sin(a) * r2).toFixed(1)}" stroke="#33334a" stroke-width="${big ? 2 : 1}"/>`
+      }
+      const arc = (t0, t1, col) => {
+        const a0 = start + span * t0, a1 = start + span * t1, rr = R * 0.85
+        return `<path d="M ${(Math.cos(a0) * rr).toFixed(1)} ${(Math.sin(a0) * rr).toFixed(1)} A ${rr} ${rr} 0 0 1 ${(Math.cos(a1) * rr).toFixed(1)} ${(Math.sin(a1) * rr).toFixed(1)}" fill="none" stroke="${col}" stroke-width="2.6"/>`
+      }
+      const na = start + span * 0.66
+      return `<circle r="${R}" fill="#f8fbff" stroke="#33334a" stroke-width="2.6"/>` +
+        arc(0, 0.55, '#5fd0e0') + arc(0.7, 1, '#ff6b6b') + ticks +
+        `<line x1="0" y1="0" x2="${(Math.cos(na) * R * 0.68).toFixed(1)}" y2="${(Math.sin(na) * R * 0.68).toFixed(1)}" stroke="#ff4040" stroke-width="2.8" stroke-linecap="round"/>` +
+        `<circle r="3.4" fill="#33334a"/><circle r="1.3" fill="#fff"/>`
+    }
+    const eye = (id, cx) => `<g id="${id}" transform="translate(${cx} -49)"><g class="lid">${gauge(17)}</g></g>`
+
+    // 腿：站立 vs 坐下
+    const legs = sit
+      ? `<g fill="${WHT}" stroke="${WLN}" stroke-width="2">
+           <path d="M -14 44 Q -40 52 -46 74 Q -47 84 -36 84 L -14 84 Q -6 66 -8 48 Z"/>
+           <path d="M 14 44 Q 40 52 46 74 Q 47 84 36 84 L 14 84 Q 6 66 8 48 Z"/>
+           <ellipse cx="-40" cy="82" rx="12" ry="7" fill="${WSH}"/><ellipse cx="40" cy="82" rx="12" ry="7" fill="${WSH}"/></g>`
+      : `<g fill="${WHT}" stroke="${WLN}" stroke-width="2">
+           <path d="M -20 44 L -22 92 Q -22 100 -12 100 L -8 100 Q -6 70 -8 44 Z"/>
+           <path d="M 20 44 L 22 92 Q 22 100 12 100 L 8 100 Q 6 70 8 44 Z"/>
+           <ellipse cx="-15" cy="99" rx="12" ry="7" fill="${WSH}"/><ellipse cx="15" cy="99" rx="12" ry="7" fill="${WSH}"/></g>`
+
+    // 后发 + 肩上两个小啾啾（低双马尾扎成球）
+    const bun = (x, s) => `<g transform="translate(${x} -6)">
+        <path d="M ${-6 * s} -34 Q ${-26 * s} -20 ${-20 * s} 6 Q ${-16 * s} 20 ${2 * s} 16 Z" fill="${HRD}"/>
+        <circle cx="0" cy="6" r="17" fill="${HAIR}" stroke="${HRD}" stroke-width="1.5"/>
+        <circle cx="${-5 * s}" cy="1" r="6" fill="${HRL}" opacity="0.6"/>
+        <path d="M 0 -12 q -8 -2 -9 6 q 9 3 10 -4 Z" fill="${PNK}"/>
+        <circle cx="0" cy="-12" r="4" fill="#ff7aa0"/></g>`
+    const backHair = `<path d="M 0 -96 C -52 -96 -60 -50 -54 -14 C -50 8 -40 22 -30 30 L 30 30 C 40 22 50 8 54 -14 C 60 -50 52 -96 0 -96 Z" fill="${HRD}"/>`
+
+    // 毛茸茸白狗连体衣：身体 + 帽子（带狗耳）+ 各处滚边
+    const body = `<g>
+        <path d="M -34 -6 Q -40 40 -30 58 Q 0 70 30 58 Q 40 40 34 -6 Q 0 -20 -34 -6 Z" fill="${WHT}" stroke="${WLN}" stroke-width="2"/>
+        <ellipse cx="0" cy="34" rx="17" ry="20" fill="${WSH}" opacity="0.7"/>
+        <circle cx="0" cy="30" r="4" fill="#8a8aa0"/>
+        <path d="M -6 34 Q 0 40 6 34" stroke="#8a8aa0" stroke-width="1.6" fill="none"/>
+        ${fluff(0, -8, 34, 9, 7, WHT)}
+        <g fill="${WHT}" stroke="${WLN}" stroke-width="2">
+          <path d="M -33 2 Q -50 14 -46 34 Q -44 44 -34 40 Q -30 20 -28 6 Z"/>
+          <path d="M 33 2 Q 50 14 46 34 Q 44 44 34 40 Q 30 20 28 6 Z"/></g>
+        ${fluff(-40, 40, 8, 4, 6, WHT)}${fluff(40, 40, 8, 4, 6, WHT)}</g>`
+
+    // 头：脸 + 帽子狗耳 + 刘海 + 腮红 + 嘴
+    const dogEars = `<g>
+        <path d="M -30 -84 Q -58 -92 -60 -62 Q -58 -46 -40 -50 Q -34 -68 -26 -80 Z" fill="${WHT}" stroke="${WLN}" stroke-width="2"/>
+        <path d="M -46 -74 Q -52 -66 -46 -58 Q -40 -62 -38 -70 Z" fill="${PNK}"/>
+        <path d="M 30 -84 Q 58 -92 60 -62 Q 58 -46 40 -50 Q 34 -68 26 -80 Z" fill="${WHT}" stroke="${WLN}" stroke-width="2"/>
+        <path d="M 46 -74 Q 52 -66 46 -58 Q 40 -62 38 -70 Z" fill="${PNK}"/></g>`
+    const hoodBack = `<path d="M 0 -92 C -46 -92 -60 -66 -56 -40 Q -52 -30 -40 -34 Q -30 -60 0 -62 Q 30 -60 40 -34 Q 52 -30 56 -40 C 60 -66 46 -92 0 -92 Z" fill="${WHT}" stroke="${WLN}" stroke-width="2"/>`
+    const face = `<ellipse cx="0" cy="-50" rx="43" ry="45" fill="${SKIN}" stroke="${SKLN}" stroke-width="1.5"/>`
+    const bangs = `<path d="M -44 -52 C -48 -86 -30 -100 0 -100 C 30 -100 48 -86 44 -52
+        L 40 -66 L 30 -50 L 22 -70 L 12 -52 L 2 -74 L -8 -52 L -18 -70 L -26 -50 L -36 -66 Z"
+        fill="${HAIR}" stroke="${HRD}" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M -44 -52 C -46 -30 -44 -18 -36 -6 Q -30 -26 -34 -52 Z" fill="${HAIR}" stroke="${HRD}" stroke-width="1.5"/>
+        <path d="M 44 -52 C 46 -30 44 -18 36 -6 Q 30 -26 34 -52 Z" fill="${HAIR}" stroke="${HRD}" stroke-width="1.5"/>
+        <path d="M -20 -78 Q 0 -90 20 -78" stroke="${HRL}" stroke-width="4" fill="none" opacity="0.55" stroke-linecap="round"/>`
+    const faceFeat = `<ellipse cx="-26" cy="-38" rx="8" ry="5" fill="${BLUSH}" opacity="0.6"/>
+        <ellipse cx="26" cy="-38" rx="8" ry="5" fill="${BLUSH}" opacity="0.6"/>
+        <path d="M 0 -40 q 2 2 0 4" stroke="${SKLN}" stroke-width="1.4" fill="none"/>`
+    const mouths = `<g id="mouths" transform="translate(0 -28)">
+        <path id="m-normal" d="M -5 0 Q 0 5 5 0" stroke="#c05a68" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path id="m-happy" d="M -7 -1 Q 0 9 7 -1 Z" fill="#c8546a" visibility="hidden"/>
+        <ellipse id="m-wow" cx="0" cy="2" rx="4" ry="5" fill="#c8546a" visibility="hidden"/>
+        <path id="m-sleepy" d="M -5 1 L 5 1" stroke="#c05a68" stroke-width="2" fill="none" stroke-linecap="round" visibility="hidden"/></g>`
+    const zzz = `<text id="zzz" x="46" y="-70" font-size="15" fill="${HAIR}" visibility="hidden">z</text>`
+    const sparks = `<g id="sparks" fill="#fff" opacity="0"></g>`
+
+    const drop = sit ? 14 : 0
+    return `<svg viewBox="-100 -128 200 244" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(0 ${drop})">
+        ${backHair}${bun(-46, 1)}${bun(46, -1)}${hoodBack}${dogEars}
+        ${legs}${body}
+        <g fill="${WHT}" stroke="${WLN}" stroke-width="2">
+          <ellipse cx="-40" cy="24" rx="11" ry="13"/><ellipse cx="40" cy="24" rx="11" ry="13"/></g>
+        ${face}${bangs}
+        <g id="eyeWrap">${eye('eyeL', -19)}${eye('eyeR', 19)}</g>
+        ${faceFeat}${mouths}${zzz}${sparks}
+      </g>
+    </svg>`
+  }
+
   // ============ 官方吉祥物 Clawd —— clawd-react(MIT) 的结构 + 真·像素网格渲染 ============
   // 结构/配色取自 clawd-react；此处用像素格逐格渲染 + 高光/阴影分层 + 阶梯边角，找回 8-bit 质感
   function buildClaudePet() {
@@ -236,7 +342,7 @@
       ${sparks}${cells}${legs}${eyeL}${eyeR}${mouths}${zzz}
     </svg>`
   }
-  const DEFAULT_SKIN = buildClaudePet()
+  const DEFAULT_SKIN = buildAnimeGirl('stand')
 
   // ============ 程序化桌宠生成器：一句话 → 带动画骨架的 SVG（离线/免费/即时）============
   function shade(hex, f) {
@@ -504,6 +610,9 @@
   let petX = 0, dir = 1, walkPhase = 0, bobY = 0, kickHop = 0
   let state = 'idle', stateUntil = 0, targetX = 0
   let dragging = false
+  // 动漫角色模式：站/坐姿势切换（其它皮肤走踢球逻辑）
+  let animeMode = true, currentPose = 'stand'
+  function setPose(p) { if (!animeMode || p === currentPose) return; currentPose = p; applySkin(buildAnimeGirl(p), false) }
   let legEls = []
   const ball = { x: 200, y: FLOOR, vx: 0, vy: 0, on: false, restT: 0 }
   let kickCd = 0
@@ -521,6 +630,12 @@
   function hideBall() { ball.on = false; ballEl.classList.remove('on') }
 
   function pickBehavior(now) {
+    if (animeMode) {
+      // 站着 / 坐着 交替（含发呆看向鼠标）
+      if (Math.random() < 0.55) { state = 'idle'; stateUntil = now + 3000 + Math.random() * 3500 }
+      else { state = 'sit'; stateUntil = now + 4000 + Math.random() * 4500 }
+      return
+    }
     const r = Math.random()
     if (r < 0.30) { state = 'idle'; stateUntil = now + 2500 + Math.random() * 3000 }
     else if (r < 0.58) {
@@ -581,6 +696,7 @@
     let walking = false
     if (!dragging) {
       if (now > stateUntil) pickBehavior(now)
+      if (animeMode) setPose(state === 'sit' ? 'sit' : 'stand')
       if (state === 'walk') {
         const d = targetX - petX
         if (Math.abs(d) > 2) { dir = d > 0 ? 1 : -1; petX += dir * 1.4 * dt; walking = true }
@@ -640,8 +756,14 @@
     if (sparks) sparks.style.opacity = state === 'idle' ? '1' : '0'
   }
 
-  // —— 点击互动：靠近球就踢，否则换心情 ——
+  // —— 点击互动 ——
   function interact() {
+    if (animeMode) { // 点一下坐下/起立
+      const next = currentPose === 'sit' ? 'stand' : 'sit'
+      setPose(next); state = next === 'sit' ? 'sit' : 'idle'; stateUntil = performance.now() + 6000
+      setMood(1); setTimeout(() => setMood(0), 1500)
+      say(next === 'sit' ? '坐下歇会儿~' : '起立！(๑•̀ㅂ•́)و'); return
+    }
     if (ball.on && Math.abs(ball.x - petCenterX()) < 90) {
       dir = ball.x >= petCenterX() ? 1 : -1; kick(1.2)
       say('射门！⚽'); return
@@ -680,6 +802,7 @@
   ballEl.addEventListener('click', () => { dir = Math.random() < 0.5 ? 1 : -1; kick(1.3); state = 'soccer'; stateUntil = performance.now() + 12000; say('好球！⚽') })
   document.getElementById('close').addEventListener('click', () => window.pet && window.pet.quit())
   document.getElementById('reset').addEventListener('click', () => {
+    animeMode = true; currentPose = 'stand'
     applySkin(DEFAULT_SKIN); try { localStorage.removeItem('petSkin') } catch {}
     say('<span class="prompt">❯</span> 我回来啦 ✦')
   })
@@ -700,6 +823,7 @@
       try {
         const skin = buildSkin(prompt)
         if (applySkin(skin)) {
+          animeMode = false // 生成的自定义皮肤走踢球逻辑，不再站/坐
           say('✦ 变身完成！不喜欢点 ↺ 换回我')
           genBar.classList.remove('open'); genInput.value = ''
         } else { say('这个描述没画好，换个说法试试？') }
@@ -729,7 +853,8 @@
   // —— 启动 ——
   let saved = null
   try { saved = localStorage.getItem('petSkin') } catch {}
-  if (!saved || !applySkin(saved, false)) applySkin(DEFAULT_SKIN, false)
+  if (saved && applySkin(saved, false)) { animeMode = false }
+  else { applySkin(DEFAULT_SKIN, false); animeMode = true; currentPose = 'stand' }
   requestAnimationFrame(loop)
   setTimeout(() => say('<span class="prompt">❯</span> 你好，我是小 Claude ✦'), 1200)
   setTimeout(chatter, 12000)
