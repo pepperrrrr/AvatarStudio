@@ -95,5 +95,12 @@ app.whenReady().then(() => {
   createWindow()
 })
 
+// 拖动桌宠移动窗口：渲染进程发来鼠标屏幕坐标增量，这里按增量挪窗口
+ipcMain.on('drag-move', (_e, { dx, dy }) => {
+  if (!win || win.isDestroyed()) return
+  const [x, y] = win.getPosition()
+  win.setPosition(Math.round(x + dx), Math.round(y + dy))
+})
+
 ipcMain.on('quit', () => app.quit())
 app.on('window-all-closed', () => app.quit())

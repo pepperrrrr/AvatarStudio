@@ -503,6 +503,7 @@
 
   let petX = 0, dir = 1, walkPhase = 0, bobY = 0, kickHop = 0
   let state = 'idle', stateUntil = 0, targetX = 0
+  let dragging = false
   let legEls = []
   const ball = { x: 200, y: FLOOR, vx: 0, vy: 0, on: false, restT: 0 }
   let kickCd = 0
@@ -576,28 +577,30 @@
     const openY = MOODS[mood] === 'sleepy' ? 0.22 : Math.max(0.06, 1 - blink)
     lids.forEach((l) => { l.style.transform = `scale(1, ${openY})` })
 
-    // 行为状态机
-    if (now > stateUntil) pickBehavior(now)
+    // 行为状态机（拖拽中暂停，让它乖乖跟手）
     let walking = false
-    if (state === 'walk') {
-      const d = targetX - petX
-      if (Math.abs(d) > 2) { dir = d > 0 ? 1 : -1; petX += dir * 1.4 * dt; walking = true }
-      else stateUntil = Math.min(stateUntil, now + 400)
-    } else if (state === 'soccer') {
-      if (!ball.on) spawnBall()
-      const gap = ball.x - petCenterX()
-      dir = gap >= 0 ? 1 : -1
-      const want = ball.x - dir * 34
-      if (Math.abs(want - petCenterX()) > 3 && Math.abs(gap) > 24) {
-        petX += dir * 1.7 * dt; petX = Math.max(WALL_L - HOME_CX + 40, Math.min(WALL_R - HOME_CX - 40, petX)); walking = true
+    if (!dragging) {
+      if (now > stateUntil) pickBehavior(now)
+      if (state === 'walk') {
+        const d = targetX - petX
+        if (Math.abs(d) > 2) { dir = d > 0 ? 1 : -1; petX += dir * 1.4 * dt; walking = true }
+        else stateUntil = Math.min(stateUntil, now + 400)
+      } else if (state === 'soccer') {
+        if (!ball.on) spawnBall()
+        const gap = ball.x - petCenterX()
+        dir = gap >= 0 ? 1 : -1
+        const want = ball.x - dir * 34
+        if (Math.abs(want - petCenterX()) > 3 && Math.abs(gap) > 24) {
+          petX += dir * 1.7 * dt; petX = Math.max(WALL_L - HOME_CX + 40, Math.min(WALL_R - HOME_CX - 40, petX)); walking = true
+        }
+        // 够到球就踢
+        if (kickCd > 0) kickCd -= dt
+        if (Math.abs(frontX() - ball.x) < 30 && ball.y > FLOOR - 40 && kickCd <= 0) { kick(1); kickCd = 22 + Math.random() * 20 }
+      } else if (state === 'sleep') {
+        if (mood !== 3) setMood(3)
       }
-      // 够到球就踢
-      if (kickCd > 0) kickCd -= dt
-      if (Math.abs(frontX() - ball.x) < 30 && ball.y > FLOOR - 40 && kickCd <= 0) { kick(1); kickCd = 22 + Math.random() * 20 }
-    } else if (state === 'sleep') {
-      if (mood !== 3) setMood(3)
+      petX = Math.max(WALK_MIN, Math.min(WALK_MAX, petX))
     }
-    petX = Math.max(WALK_MIN, Math.min(WALK_MAX, petX))
 
     // 球物理（任何状态都在滚，滚停一会儿就收起）
     stepBall(dt)
@@ -648,7 +651,32 @@
     burst(petCenterX(), FLOOR - 60, Math.random() < 0.5 ? '♥' : '✦')
     say(mood === 1 ? '嘿嘿 (＾▽＾)' : mood === 2 ? '哇哦！' : mood === 3 ? '休息一下… z Z' : '继续干活！')
   }
-  petWrap.addEventListener('click', interact)
+  // —— 拖拽移动窗口：按住桌宠拖=移动窗口，没怎么动就当作点击互动 ——
+  let dragLastX = 0, dragLastY = 0, dragDist = 0
+  function onDragMove(e) {
+    if (!dragging) return
+    const dx = e.screenX - dragLastX, dy = e.screenY - dragLastY
+    dragDist += Math.abs(dx) + Math.abs(dy)
+    dragLastX = e.screenX; dragLastY = e.screenY
+    if (window.pet && window.pet.dragMove) window.pet.dragMove({ dx, dy })
+  }
+  function onDragEnd() {
+    if (!dragging) return
+    dragging = false
+    window.removeEventListener('mousemove', onDragMove)
+    window.removeEventListener('mouseup', onDragEnd)
+    if (dragDist < 5) interact()          // 几乎没动 → 视作点击
+    else stateUntil = performance.now() + 1500 // 拖完歇一下再自己动
+  }
+  function startDrag(e) {
+    dragging = true; dragDist = 0
+    dragLastX = e.screenX; dragLastY = e.screenY
+    window.addEventListener('mousemove', onDragMove)
+    window.addEventListener('mouseup', onDragEnd)
+    e.preventDefault()
+  }
+  petWrap.addEventListener('mousedown', startDrag)
+
   ballEl.addEventListener('click', () => { dir = Math.random() < 0.5 ? 1 : -1; kick(1.3); state = 'soccer'; stateUntil = performance.now() + 12000; say('好球！⚽') })
   document.getElementById('close').addEventListener('click', () => window.pet && window.pet.quit())
   document.getElementById('reset').addEventListener('click', () => {
