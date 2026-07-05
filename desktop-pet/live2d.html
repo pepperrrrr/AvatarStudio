@@ -59,6 +59,7 @@
   const canvas = document.getElementById('canvas')
   const hint = document.getElementById('hint')
   let model = null
+  let app = null
   let dragging = false
 
   function say(t, ms = 3200) {
@@ -68,23 +69,29 @@
     say._t = setTimeout(() => hint.classList.remove('show'), ms)
   }
 
-  // —— 点击穿透：只有指到模型包围盒上才接管鼠标 ——
+  // —— 点击穿透（像素级）：读光标处画布像素透明度，只有点在"画出来的形象"上才接管鼠标 ——
+  // 之前用模型包围盒判定，Live2D 网格范围远大于可见形象，导致角色附近大片区域点不了桌面
   let ptState = null, uiTimer = 0
+  const pxBuf = new Uint8Array(4)
   function setPT(on) {
     if (on === ptState) return
     ptState = on
     if (window.pet && window.pet.setPassthrough) window.pet.setPassthrough(on)
   }
-  function insideModel(x, y) {
-    if (!model) return false
-    const b = model.getBounds()
-    // 模型贴图四周有留白，包围盒往里收一点
-    const px = b.width * 0.14, py = b.height * 0.06
-    return x >= b.x + px && x <= b.x + b.width - px && y >= b.y + py && y <= b.y + b.height - py
+  function overPet(x, y) {
+    if (!model || !app) return false
+    const gl = app.renderer.gl
+    const res = app.renderer.resolution
+    const gx = Math.round(x * res)
+    const gy = Math.round(gl.drawingBufferHeight - y * res)
+    if (gx < 0 || gy < 0 || gx >= gl.drawingBufferWidth || gy >= gl.drawingBufferHeight) return false
+    gl.readPixels(gx, gy, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pxBuf)
+    return pxBuf[3] > 16
   }
+  window.__overPet = overPet // 调试钩子
   document.addEventListener('mousemove', (e) => {
     if (dragging) { setPT(false); return }
-    const inter = insideModel(e.clientX, e.clientY) || (e.target && e.target.classList && e.target.classList.contains('sideBtn'))
+    const inter = overPet(e.clientX, e.clientY) || (e.target && e.target.classList && e.target.classList.contains('sideBtn'))
     setPT(!inter)
     if (inter) {
       document.body.classList.add('ui-on')
@@ -117,7 +124,7 @@
     }
   }
   document.addEventListener('mousedown', (e) => {
-    if (!insideModel(e.clientX, e.clientY)) return
+    if (!overPet(e.clientX, e.clientY)) return
     dragging = true; dDist = 0
     dLX = e.screenX; dLY = e.screenY
     window.addEventListener('mousemove', onMove)
@@ -130,10 +137,11 @@
 
   // —— 加载模型 ——
   ;(async () => {
-    const app = new PIXI.Application({
+    app = new PIXI.Application({
       view: canvas, width: W, height: H,
       backgroundAlpha: 0, antialias: true, autoDensity: true,
       resolution: Math.min(window.devicePixelRatio || 1, 2),
+      preserveDrawingBuffer: true, // 像素级穿透需要随时读取画布 alpha
     })
     try {
       model = await PIXI.live2d.Live2DModel.from('models/haru/haru_greeter_t03.model3.json', { autoInteract: false })
