@@ -226,10 +226,10 @@
     const inner = `<path d="M -22 -30 Q 0 -24 22 -30 L 24 -6 Q 0 0 -24 -6 Z" fill="${CREAM}" stroke="#d8d5cc" stroke-width="1"/>`
 
     // Oversize 连帽卫衣（炭灰渐变，上宽下窄；帽子搭在背后；袖子垂到手）
-    const hoodie = `
-        <path d="M -30 -70 Q -40 -66 -42 -40 Q -44 -18 -34 -8 L -34 -30 Q -30 -20 -22 -18 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1"/>
-        <path d="M 30 -70 Q 40 -66 42 -40 Q 44 -18 34 -8 L 34 -30 Q 30 -20 22 -18 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1"/>
-        <path d="M -30 -70 Q 0 -78 30 -70 Q 36 -40 30 -14 Q 0 -6 -30 -14 Q -36 -40 -30 -70 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1.2"/>
+    const hoodie = ` <!-- 左肩稍高 -->
+        <path d="M -30 -74 Q -41 -69 -43 -41 Q -44 -18 -34 -8 L -34 -30 Q -30 -20 -22 -19 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1"/>
+        <path d="M 30 -69 Q 40 -65 42 -40 Q 44 -18 34 -8 L 34 -30 Q 30 -20 22 -18 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1"/>
+        <path d="M -30 -74 Q 0 -79 30 -69 Q 36 -40 30 -14 Q 0 -6 -30 -14 Q -36 -41 -30 -74 Z" fill="url(#gHood)" stroke="${CHARD}" stroke-width="1.2"/>
         <path d="M -20 -74 Q 0 -66 20 -74 Q 18 -60 0 -58 Q -18 -60 -20 -74 Z" fill="${CHARD}"/>
         <line x1="-4" y1="-56" x2="-5" y2="-30" stroke="${CREAM}" stroke-width="1.4"/><line x1="4" y1="-56" x2="5" y2="-30" stroke="${CREAM}" stroke-width="1.4"/>
         <path d="M -12 -34 Q 0 -28 12 -34" fill="none" stroke="${CHARD}" stroke-width="1" opacity="0.6"/>
@@ -237,30 +237,36 @@
 
     // —— 头/脸（柔和倒梯形，圆下巴）——
     const face = `<path d="M -15 -104 Q -16.5 -95 -14.5 -89 Q -11 -82 0 -81 Q 11 -82 14.5 -89 Q 16.5 -95 15 -104 Q 12 -114 0 -114.5 Q -12 -114 -15 -104 Z" fill="url(#gSkin)" stroke="${SKLN}" stroke-width="1"/>`
-    const earL = `<ellipse cx="-15" cy="-95" rx="3.4" ry="5" fill="${SKIN}" stroke="${SKLN}" stroke-width="0.8"/>` // 左耳露出
-    const faceFeat = `<ellipse cx="-8" cy="-88" rx="3.6" ry="2.2" fill="#ff9db0" opacity="0.5"/>
-        <ellipse cx="8" cy="-88" rx="3.6" ry="2.2" fill="#ff9db0" opacity="0.5"/>
-        <path d="M 0 -90 q 1.4 1.4 0 2.8" stroke="${SKLN}" stroke-width="1" fill="none"/>`
-    // 微表情：默认嘴角上扬约 3°
-    const mouths = `<g id="mouths" transform="translate(0 -84)">
-        <path id="m-normal" d="M -3.4 0 Q 0 2.2 3.4 -0.6" stroke="#c07a70" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-        <path id="m-happy" d="M -4 -0.5 Q 0 4.5 4 -0.5 Z" fill="#c8746a" visibility="hidden"/>
-        <ellipse id="m-wow" cx="0" cy="1.2" rx="2.2" ry="2.8" fill="#c8746a" visibility="hidden"/>
-        <path id="m-sleepy" d="M -3.4 0.5 L 3.4 0.5" stroke="#c07a70" stroke-width="1.3" fill="none" stroke-linecap="round" visibility="hidden"/></g>`
+    // 左耳露出：上缘对齐眉(≈-99)、下缘对齐鼻底(≈-86)
+    const earL = `<ellipse cx="-15" cy="-92.5" rx="3.4" ry="6.4" fill="${SKIN}" stroke="${SKLN}" stroke-width="0.8"/>
+        <path d="M -15.4 -95 Q -13.2 -93 -14 -89.5" stroke="${SKLN}" stroke-width="0.6" fill="none" opacity="0.7"/>`
+    // 腮红 + 鼻子(长约占脸长 30%：桥 -95→底 -86) + 微鼻孔
+    const faceFeat = `<ellipse cx="-9" cy="-87" rx="3.8" ry="2.3" fill="#ff9db0" opacity="0.5"/>
+        <ellipse cx="9" cy="-87" rx="3.8" ry="2.3" fill="#ff9db0" opacity="0.5"/>
+        <path d="M -1 -95 Q -1.8 -89 0.2 -86.4" stroke="${SKLN}" stroke-width="0.8" fill="none" opacity="0.65"/>
+        <path d="M 0.2 -86.4 q 1.6 1.1 -0.2 2.2" stroke="${SKLN}" stroke-width="0.9" fill="none"/>`
+    // 微表情：默认嘴角上扬约 3°，嘴宽≈瞳孔间距
+    const mouths = `<g id="mouths" transform="translate(0 -83)">
+        <path id="m-normal" d="M -5.4 0 Q 0 2.5 5.4 -1" stroke="#c07a70" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+        <path id="m-happy" d="M -5.5 -0.6 Q 0 5 5.5 -0.6 Z" fill="#c8746a" visibility="hidden"/>
+        <ellipse id="m-wow" cx="0" cy="1.2" rx="2.4" ry="3" fill="#c8746a" visibility="hidden"/>
+        <path id="m-sleepy" d="M -5 0.6 L 5 0.6" stroke="#c07a70" stroke-width="1.3" fill="none" stroke-linecap="round" visibility="hidden"/></g>`
 
     // —— 深雾棕长发：七三分碎刘海（右遮左露）+ 一条细辫 + 腰下长发（自然微卷）——
     const hairBack = `<path d="M -16 -108 C -30 -104 -34 -80 -30 -50 C -27 -20 -22 10 -18 26 L 18 26 C 22 10 27 -20 30 -50 C 34 -80 30 -104 16 -108 C 8 -112 -8 -112 -16 -108 Z" fill="url(#gHairB)"/>
         <path d="M 18 -26 Q 30 6 22 28 Q 18 12 14 -20 Z" fill="${HRDK}" opacity="0.5"/>`
     const braid = `<g stroke="${HRDK}" stroke-width="0.6"><path d="M 20 -30 Q 26 0 22 30" fill="none" stroke="${HR}" stroke-width="3"/>
         <path d="M 19 -20 L 25 -14 M 25 -8 L 19 -2 M 19 4 L 25 10 M 25 16 L 20 22" /></g>`
-    // 七三分碎刘海：分缝在 x≈-4，右侧厚(遮右)，左侧薄(露左耳/眉)，很多碎发尖
-    const bangs = `<path d="M -15 -103 Q -17 -115 0 -116 Q 17 -115 15 -103
-        Q 14.5 -99 11 -101 Q 13 -109 5 -111 Q 7 -101 1 -103
-        Q 2.5 -111 -4 -111 Q -3.5 -101 -8 -102 Q -6.5 -109 -12 -107 Q -12.5 -101 -15 -103 Z"
+    // 七三分碎刘海：分缝 x≈-5；右侧(7)厚、扫过额头遮右侧；左侧(3)薄、露左耳；很多碎发尖
+    const bangs = `<path d="M -15 -102 Q -16 -115 0 -116 Q 17 -115 15 -102
+        Q 14 -97 10.5 -99 Q 12.5 -108 4.5 -110 Q 6.5 -99 0.5 -101
+        Q 1.5 -110 -5 -110
+        Q -4.5 -101 -8.5 -102 Q -7 -108 -12 -106 Q -12.5 -101 -15 -102 Z"
         fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7" stroke-linejoin="round"/>
-        <path d="M 15 -103 Q 21 -94 18.5 -80 Q 15 -74 12.5 -80 Q 15 -92 12 -100 Z" fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7"/>
-        <path d="M -14.5 -101 Q -18 -92 -15 -82 Q -12.5 -86 -12 -96 Z" fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7"/>
-        <path d="M -6 -111 Q 3 -115 11 -110" stroke="${HRLI}" stroke-width="1.3" fill="none" opacity="0.6" stroke-linecap="round"/>`
+        <path d="M 15 -102 Q 22 -91 19 -76 Q 15 -70 12.5 -77 Q 15.5 -90 12 -99 Z" fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7"/>
+        <path d="M -14.5 -100 Q -17 -94 -15.5 -88 Q -13.6 -91 -13 -97 Z" fill="url(#gHairF)" stroke="${HRDK}" stroke-width="0.7"/>
+        <path d="M -6 -110 Q 3 -114 11 -109" stroke="${HRLI}" stroke-width="1.2" fill="none" opacity="0.55" stroke-linecap="round"/>
+        <path d="M -5 -110 L -6 -103 M 4.5 -110 L 5.6 -102 M -10 -106 L -11 -100 M 9 -105 L 9.6 -99" stroke="${HRDK}" stroke-width="0.4" opacity="0.5" fill="none"/>`
 
     // —— 饰品：银色立方发夹 · 三尺寸立方耳饰(左耳) · 悬浮镂空立方项链 · 建筑师风手链 ——
     const clip = cube(-11, -101, 2.4, SIL, SILL, SILD)
@@ -293,7 +299,7 @@
           ${necklace}
         </g>
         ${face}${earL}${earrings}${hairBack ? '' : ''}
-        <g id="eyeWrap">${eye('eyeL', -8)}${eye('eyeR', 8)}</g>
+        <g id="eyeWrap">${eye('eyeL', -9)}${eye('eyeR', 9)}</g>
         ${faceFeat}${mouths}
         ${bangs}${clip}
         ${zzz}${sparks}
