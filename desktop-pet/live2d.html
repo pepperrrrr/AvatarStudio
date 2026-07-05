@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>Live2D 桌宠</title>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; user-select: none; }
+  #canvas { display: block; pointer-events: none; }
+  .sideBtn {
+    position: absolute;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(30, 30, 36, .85);
+    color: #ddd;
+    font-size: 11px;
+    line-height: 22px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .2s;
+    pointer-events: auto;
+    padding: 0;
+  }
+  body.ui-on .sideBtn { opacity: 1; }
+  #close { top: 8px; }
+  #swap { top: 36px; }
+  #hint {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    transform: translateX(-50%);
+    background: #1f2430;
+    color: #e8ecf4;
+    border: 1px solid #343c4e;
+    border-radius: 8px;
+    padding: 4px 9px;
+    font: 10px/1.4 "PingFang SC", sans-serif;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  #hint.show { opacity: 1; }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<button id="close" class="sideBtn" title="退出桌宠">✕</button>
+<button id="swap" class="sideBtn" title="切回手绘小人">🎨</button>
+<div id="hint"></div>
+<script src="vendor/live2dcubismcore.min.js"></script>
+<script src="vendor/pixi.min.js"></script>
+<script src="vendor/cubism4.min.js"></script>
+<script>
+  const W = 340, H = 320
+  const canvas = document.getElementById('canvas')
+  const hint = document.getElementById('hint')
+  let model = null
+  let dragging = false
+
+  function say(t, ms = 3200) {
+    hint.textContent = t
+    hint.classList.add('show')
+    clearTimeout(say._t)
+    say._t = setTimeout(() => hint.classList.remove('show'), ms)
+  }
+
+  // —— 点击穿透：只有指到模型包围盒上才接管鼠标 ——
+  let ptState = null, uiTimer = 0
+  function setPT(on) {
+    if (on === ptState) return
+    ptState = on
+    if (window.pet && window.pet.setPassthrough) window.pet.setPassthrough(on)
+  }
+  function insideModel(x, y) {
+    if (!model) return false
+    const b = model.getBounds()
+    // 模型贴图四周有留白，包围盒往里收一点
+    const px = b.width * 0.14, py = b.height * 0.06
+    return x >= b.x + px && x <= b.x + b.width - px && y >= b.y + py && y <= b.y + b.height - py
+  }
+  document.addEventListener('mousemove', (e) => {
+    if (dragging) { setPT(false); return }
+    const inter = insideModel(e.clientX, e.clientY) || (e.target && e.target.classList && e.target.classList.contains('sideBtn'))
+    setPT(!inter)
+    if (inter) {
+      document.body.classList.add('ui-on')
+      clearTimeout(uiTimer)
+      uiTimer = setTimeout(() => document.body.classList.remove('ui-on'), 1800)
+    }
+  })
+  setPT(true)
+
+  // —— 拖拽移动窗口 / 轻点播放动作 ——
+  let dLX = 0, dLY = 0, dDist = 0
+  function onMove(e) {
+    if (!dragging) return
+    const dx = e.screenX - dLX, dy = e.screenY - dLY
+    dDist += Math.abs(dx) + Math.abs(dy)
+    dLX = e.screenX; dLY = e.screenY
+    if (window.pet && window.pet.dragMove) window.pet.dragMove({ dx, dy })
+  }
+  function onUp() {
+    if (!dragging) return
+    dragging = false
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    if (dDist < 5 && model) { // 轻点 → 随机动作 + 表情
+      const groups = Object.keys(model.internalModel.motionManager.definitions || {}).filter((g) => g !== 'idle')
+      const g = groups[Math.floor(Math.random() * groups.length)]
+      if (g) model.motion(g)
+      if (Math.random() < 0.6) model.expression()
+      say('(*´▽`*)')
+    }
+  }
+  document.addEventListener('mousedown', (e) => {
+    if (!insideModel(e.clientX, e.clientY)) return
+    dragging = true; dDist = 0
+    dLX = e.screenX; dLY = e.screenY
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    e.preventDefault()
+  })
+
+  document.getElementById('close').addEventListener('click', () => window.pet && window.pet.quit())
+  document.getElementById('swap').addEventListener('click', () => { window.location = 'pet.html' })
+
+  // —— 加载模型 ——
+  ;(async () => {
+    const app = new PIXI.Application({
+      view: canvas, width: W, height: H,
+      backgroundAlpha: 0, antialias: true, autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio || 1, 2),
+    })
+    try {
+      model = await PIXI.live2d.Live2DModel.from('models/haru/haru_greeter_t03.model3.json', { autoInteract: false })
+    } catch (e) {
+      say('模型加载失败：' + String(e).slice(0, 80), 8000)
+      return
+    }
+    const scale = Math.min(W / model.width, H / model.height)
+    model.scale.set(scale)
+    model.anchor.set(0.5, 0)
+    model.position.set(W / 2, 0)
+    app.stage.addChild(model)
+
+    // 全局视线跟随（主进程喂真实光标位置）
+    if (window.pet && window.pet.onCursor) {
+      window.pet.onCursor(({ dx, dy }) => {
+        if (!model) return
+        const cx = W / 2 + Math.max(-900, Math.min(900, dx)) * 0.4
+        const cy = H / 2 + Math.max(-700, Math.min(700, dy)) * 0.4
+        model.focus(cx, cy)
+      })
+    }
+    setTimeout(() => say('皮套模式 · Live2D 官方示例 Haru'), 900)
+  })()
+</script>
+</body>
+</html>

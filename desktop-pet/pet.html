@@ -157,6 +157,7 @@
   <button id="close" class="sideBtn" title="退出桌宠">✕</button>
   <button id="gen" class="sideBtn" title="用一句话生成新桌宠">✎</button>
   <button id="reset" class="sideBtn" title="换回小 Claude">↺</button>
+  <button id="live2d" class="sideBtn" style="top: 126px" title="切换 Live2D 真皮套">🎭</button>
   <div id="genBar">
     <input id="genInput" placeholder="如：戴帽子的蓝色小猫…回车生成" />
     <button id="genGo">➤</button>
@@ -896,6 +897,7 @@
 
   ballEl.addEventListener('click', () => { dir = Math.random() < 0.5 ? 1 : -1; kick(1.3); state = 'soccer'; stateUntil = performance.now() + 12000; say('好球！⚽') })
   document.getElementById('close').addEventListener('click', () => window.pet && window.pet.quit())
+  document.getElementById('live2d').addEventListener('click', () => { window.location = 'live2d.html' })
   document.getElementById('reset').addEventListener('click', () => {
     animeMode = true; currentPose = 'stand'
     applySkin(DEFAULT_SKIN); try { localStorage.removeItem('petSkin') } catch {}

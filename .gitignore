@@ -4,3 +4,5 @@ dist/
 *.log
 *.local
 skins/
+desktop-pet/models/
+desktop-pet/vendor/
