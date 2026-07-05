@@ -50,6 +50,7 @@ function createWindow() {
   })
   win.setAlwaysOnTop(true, 'screen-saver')
   win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  win.setIgnoreMouseEvents(true, { forward: true }) // 启动即穿透，悬停角色时再接管
   win.loadFile('pet.html')
 
   // 把全局鼠标位置喂给渲染进程，让桌宠视线跟着真实光标走
@@ -100,6 +101,12 @@ ipcMain.on('drag-move', (_e, { dx, dy }) => {
   if (!win || win.isDestroyed()) return
   const [x, y] = win.getPosition()
   win.setPosition(Math.round(x + dx), Math.round(y + dy))
+})
+
+// 点击穿透：默认整窗穿透(透明区域不挡任何操作)，悬停到角色/按钮上时由渲染进程关闭穿透
+ipcMain.on('set-passthrough', (_e, on) => {
+  if (!win || win.isDestroyed()) return
+  win.setIgnoreMouseEvents(!!on, { forward: true })
 })
 
 ipcMain.on('quit', () => app.quit())
